@@ -34,34 +34,23 @@ The proposed accelerator implements a compact **SIREN-based coordinate-to-pixel 
 
 ```mermaid
 flowchart TD
+    A["Input Coordinates (x, y)<br/>Signed Q4.12"] --> B["Broadcast to 16 Neurons"]
 
-    A["Input Coordinates<br/>(x, y) - Signed Q4.12"]
-    B["Broadcast to 16 Neurons"]
-
-    A --> B
-
-    subgraph L1["Layer 1 - 16 Parallel SIREN Neurons"]
-
-        C["2-Cycle MAC<br/>&#952; = x*W0 + y*W1"]
-        D["Phase Folding<br/>&#952; -> [-pi, pi]"]
-        E["16-Stage CORDIC<br/>sin(&#952;)"]
+    subgraph L1["Layer 1: 16 Parallel SIREN Neurons"]
+        C["2-Cycle Coordinate MAC<br/>acc = x*W0 + y*W1 + Bias"]
+        D["Omega-0 Scaler<br/>θ_raw = acc * 30.0"]
+        E["Phase Folder<br/>θ in [-π, π]"]
+        F["16-Stage CORDIC Engine<br/>sin(θ), cos(θ)"]
 
         C --> D
         D --> E
-
+        E --> F
     end
 
     B --> C
-
-    F["Layer 2 - Linear Combiner<br/>Sum(sin(&#952;_k) * W2_k)<br/>Shift right by 12 + Bias_L2"]
-
-    G["Symmetric Saturation Clamp<br/>[-32768, +32767]"]
-
-    H["Reconstructed Pixel<br/>Signed Q4.12"]
-
-    E --> F
-    F --> G
-    G --> H
+    F --> G["Layer 2: Linear Combiner<br/>Σ (sin(θ_k) * W2_k) >>> 12 + Bias_L2"]
+    G --> H["Symmetric Saturation Clamp<br/>[-32768, +32767]"]
+    H --> I["Reconstructed Pixel<br/>Signed Q4.12"]
 ```
 ## 4. Latency & Timing Profile
 
