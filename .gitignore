@@ -1,16 +1,9 @@
-# Simulation binaries and waveforms
 sim/tb_recon_*
 *.vcd
 *.vvp
-
-# Generated intermediate data
 sim/*.hex
 doc/*.npy
-
-# Python cache
 __pycache__/
 *.pyc
-
-# System / editor files
 .DS_Store
 .vscode/
