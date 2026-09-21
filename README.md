@@ -68,7 +68,7 @@ flowchart LR
     class B,C,D,E,F,G process
     class H output
 ---
-
+```
 ## 4. Latency & Timing Profile
 
 | Pipeline Stage | Cycles | Description |
