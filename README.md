@@ -35,40 +35,28 @@ The proposed accelerator implements a compact **SIREN-based coordinate-to-pixel 
 ```mermaid
 flowchart LR
 
-    A["Input Coordinates<br/><b>(x, y)</b><br/>Signed Q4.12"]
-
+    A["Input Coordinates<br/>(x, y)<br/>Signed Q4.12"]
     B["Broadcast<br/>to 16 Neurons"]
 
-    subgraph L1["Layer 1 — 16 Parallel SIREN Neurons"]
-
-        C["Neuron k<br/><br/>2-Cycle MAC<br/>x·W0ₖ + y·W1ₖ"]
-
-        D["Phase Folding<br/><br/>θₖ → [-π, π]"]
-
-        E["16-Stage CORDIC<br/><br/>sin(θₖ)"]
-
-        C --> D --> E
-
+    subgraph L1["Layer 1 - 16 Parallel SIREN Neurons"]
+        C["2-Cycle MAC<br/>x*W0 + y*W1"]
+        D["Phase Folding<br/>theta -> [-pi, pi]"]
+        E["16-Stage CORDIC<br/>sin(theta)"]
+        C --> D
+        D --> E
     end
 
-    F["Layer 2 — Linear Combiner<br/><br/>Σ [sin(θₖ) · W2ₖ]<br/>      >>> 12<br/>+ Bias_L2"]
+    F["Layer 2 - Linear Combiner<br/>Sum(sin(theta_k) * W2_k) >> 12 + Bias_L2"]
+    G["Symmetric Saturation<br/>[-32768, +32767]"]
+    H["Reconstructed Pixel<br/>Signed Q4.12"]
 
-    G["Symmetric Saturation Clamp<br/><br/>[-32768, +32767]"]
-
-    H["Reconstructed Pixel<br/><br/>Signed Q4.12"]
-
-    A --> B --> C
-    E --> F --> G --> H
-
-    classDef input fill:#e8f4ff,stroke:#2684ff,stroke-width:2px
-    classDef process fill:#f5f5f5,stroke:#666,stroke-width:1.5px
-    classDef output fill:#e9f7ef,stroke:#28a745,stroke-width:2px
-
-    class A input
-    class B,C,D,E,F,G process
-    class H output
----
+    A --> B
+    B --> C
+    E --> F
+    F --> G
+    G --> H
 ```
+
 ## 4. Latency & Timing Profile
 
 | Pipeline Stage | Cycles | Description |
