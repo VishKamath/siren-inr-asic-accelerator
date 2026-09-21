@@ -28,3 +28,42 @@ Because $(x, y) \in [-1.0, 1.0]$ are fed as continuous coordinate values rather 
 ---
 
 ## 3. Hardware Datapath
+## 🧠 Hardware Architecture
+
+The proposed accelerator implements a compact **SIREN-based coordinate-to-pixel reconstruction architecture** using fixed-point arithmetic, parallel neurons, phase folding, and a pipelined CORDIC sine engine.
+
+```mermaid
+flowchart LR
+
+    A["Input Coordinates<br/><b>(x, y)</b><br/>Signed Q4.12"]
+
+    B["Broadcast<br/>to 16 Neurons"]
+
+    subgraph L1["Layer 1 — 16 Parallel SIREN Neurons"]
+
+        C["Neuron k<br/><br/>2-Cycle MAC<br/>x·W0ₖ + y·W1ₖ"]
+
+        D["Phase Folding<br/><br/>θₖ → [-π, π]"]
+
+        E["16-Stage CORDIC<br/><br/>sin(θₖ)"]
+
+        C --> D --> E
+
+    end
+
+    F["Layer 2 — Linear Combiner<br/><br/>Σ [sin(θₖ) · W2ₖ]<br/>      >>> 12<br/>+ Bias_L2"]
+
+    G["Symmetric Saturation Clamp<br/><br/>[-32768, +32767]"]
+
+    H["Reconstructed Pixel<br/><br/>Signed Q4.12"]
+
+    A --> B --> C
+    E --> F --> G --> H
+
+    classDef input fill:#e8f4ff,stroke:#2684ff,stroke-width:2px
+    classDef process fill:#f5f5f5,stroke:#666,stroke-width:1.5px
+    classDef output fill:#e9f7ef,stroke:#28a745,stroke-width:2px
+
+    class A input
+    class B,C,D,E,F,G process
+    class H output
