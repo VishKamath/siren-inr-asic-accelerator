@@ -33,25 +33,27 @@ Because $(x, y) \in [-1.0, 1.0]$ are fed as continuous coordinate values rather 
 The proposed accelerator implements a compact **SIREN-based coordinate-to-pixel reconstruction architecture** using fixed-point arithmetic, parallel neurons, phase folding, and a pipelined CORDIC sine engine.
 
 ```mermaid
-flowchart LR
+flowchart TD
 
-    A["Input Coordinates<br/>(x, y)<br/>Signed Q4.12"]
-    B["Broadcast<br/>to 16 Neurons"]
+    A["Input Coordinates<br/>(x, y) - Signed Q4.12"]
+    B["Broadcast to 16 Neurons"]
+
+    A --> B
 
     subgraph L1["Layer 1 - 16 Parallel SIREN Neurons"]
         C["2-Cycle MAC<br/>x*W0 + y*W1"]
         D["Phase Folding<br/>theta -> [-pi, pi]"]
         E["16-Stage CORDIC<br/>sin(theta)"]
-        C --> D
-        D --> E
+
+        C --> D --> E
     end
 
+    B --> C
+
     F["Layer 2 - Linear Combiner<br/>Sum(sin(theta_k) * W2_k) >> 12 + Bias_L2"]
-    G["Symmetric Saturation<br/>[-32768, +32767]"]
+    G["Symmetric Saturation Clamp<br/>[-32768, +32767]"]
     H["Reconstructed Pixel<br/>Signed Q4.12"]
 
-    A --> B
-    B --> C
     E --> F
     F --> G
     G --> H
