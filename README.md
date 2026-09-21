@@ -41,24 +41,28 @@ flowchart TD
     A --> B
 
     subgraph L1["Layer 1 - 16 Parallel SIREN Neurons"]
-        C["2-Cycle MAC<br/>x*W0 + y*W1"]
-        D["Phase Folding<br/>theta -> [-pi, pi]"]
-        E["16-Stage CORDIC<br/>sin(theta)"]
 
-        C --> D --> E
+        C["2-Cycle MAC<br/>&#952; = x*W0 + y*W1"]
+        D["Phase Folding<br/>&#952; -> [-pi, pi]"]
+        E["16-Stage CORDIC<br/>sin(&#952;)"]
+
+        C --> D
+        D --> E
+
     end
 
     B --> C
 
-    F["Layer 2 - Linear Combiner<br/>Sum(sin(theta_k) * W2_k) >> 12 + Bias_L2"]
+    F["Layer 2 - Linear Combiner<br/>Sum(sin(&#952;_k) * W2_k)<br/>Shift right by 12 + Bias_L2"]
+
     G["Symmetric Saturation Clamp<br/>[-32768, +32767]"]
+
     H["Reconstructed Pixel<br/>Signed Q4.12"]
 
     E --> F
     F --> G
     G --> H
 ```
-
 ## 4. Latency & Timing Profile
 
 | Pipeline Stage | Cycles | Description |
