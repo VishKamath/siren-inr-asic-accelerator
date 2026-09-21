@@ -1,0 +1,61 @@
+Cadence Genus(TM) Synthesis Solution.
+Copyright 2022 Cadence Design Systems, Inc. All rights reserved worldwide.
+Cadence and the Cadence logo are registered trademarks and Genus is a trademark
+of Cadence Design Systems, Inc. in the United States and other countries.
+
+[13:24:28.328610] Configured Lic search path (21.01-s002): 5281@14.139.1.126:1717@14.139.1.126
+
+Version: 21.14-s082_1, built Thu Jun 23 02:02:08 PDT 2022
+Options: -files script.tcl 
+Date:    Wed Sep 16 13:24:28 2026
+Host:    cad312vitcc.vit.ac.in (x86_64 w/Linux 4.18.0-553.150.1.el8_10.x86_64) (16cores*64cpus*2physical cpus*INTEL(R) XEON(R) GOLD 6526Y 38400KB) (2112776980KB)
+PID:     3292505
+OS:      Red Hat Enterprise Linux release 8.10 (Ootpa)
+
+Checkout succeeded: Genus_Synthesis/3FFB3787901511A9760E
+	License file: 5281@14.139.1.126
+	License Server: 5281@14.139.1.126
+
+[13:24:29.322834] Periodic Lic check successful
+[13:24:29.322843] Feature usage summary:
+[13:24:29.322843] Genus_Synthesis
+Checking out license: Genus_Synthesis
+
+
+***********************************************************************************************************
+***********************************************************************************************************
+
+
+
+Loading tool scripts...
+Finished loading tool scripts (6 seconds elapsed).
+
+#@ Processing -files option
+@genus 1> source script.tcl
+#@ Begin verbose source ./script.tcl
+@file(script.tcl) 2: set_db init_lib_search_path {/home/install/FOUNDRY/digital/45nm/dig/LIBS/lib/max}
+  Setting attribute of root '/': 'init_lib_search_path' = /home/install/FOUNDRY/digital/45nm/dig/LIBS/lib/max
+@file(script.tcl) 3: set_db init_hdl_search_path {../rtl}
+  Setting attribute of root '/': 'init_hdl_search_path' = ../rtl
+@file(script.tcl) 5: read_libs slow.lib
+Error   : File error. [FILE-100] [::legacy::set_attribute]
+        : Cannot open file 'slow.lib'
+        : Make sure that the file is a readable regular file and has the specified name.
+Error   : A library file does not exist. [LBR-68] [::legacy::set_attribute]
+        : File 'slow.lib' could not be found. File '<none>' was the last file that was successfully read in.
+        : Make sure that the library file exists or check for a typo in the file name.
+Error   : The data value for this attribute is invalid. [TUI-24] [::legacy::set_attribute]
+        : The value '  { slow.lib } ' cannot be set for attribute 'library'.
+        : To see the usage/description for this attribute, type '::legacy::set_attribute -h <attr_name> *' (in legacy UI mode) or 'help * <attr_name> -detail' (in CUI mode).
+#@ End verbose source ./script.tcl
+1
+Encountered problems processing file: script.tcl
+WARNING: This version of the tool is 1545 days old.
+@genus:root: 2> exit
+
+Lic Summary:
+[13:25:13.000400] Cdslmd servers: cadence-c2s
+[13:25:13.000403] Feature usage summary:
+[13:25:13.000403] Genus_Synthesis
+
+Normal exit.

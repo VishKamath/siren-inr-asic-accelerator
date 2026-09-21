@@ -1,0 +1,28 @@
+# Read all SystemVerilog files in dependency order
+read_verilog -sv inr_pkg.sv
+read_verilog -sv mac_unit.sv
+read_verilog -sv siren_scaler.sv
+read_verilog -sv phase_folder.sv
+read_verilog -sv cordic_stage.sv
+read_verilog -sv cordic_wrapper.sv
+read_verilog -sv siren_act_unit.sv
+read_verilog -sv siren_neuron.sv
+
+# Top-level module elaboration and sanity check
+hierarchy -top siren_neuron
+check
+
+# Standard full synthesis flow (handles async resets, enables, and logic)
+synth -top siren_neuron
+
+# Map all combinational logic to generic gates (AND, OR, XOR, MUX)
+abc -g AND,OR,XOR,MUX
+
+# Clean up dead nets
+clean
+
+# Print gate and flip-flop statistics
+stat
+
+# Output the synthesized gate-level netlist
+write_verilog -noattr siren_neuron_synth.v
