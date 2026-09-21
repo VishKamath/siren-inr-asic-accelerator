@@ -28,7 +28,7 @@ Because $(x, y) \in [-1.0, 1.0]$ are fed as continuous coordinate values rather 
 ---
 
 ## 3. Hardware Datapath
-## 🧠 Hardware Architecture
+## Hardware Architecture
 
 The proposed accelerator implements a compact **SIREN-based coordinate-to-pixel reconstruction architecture** using fixed-point arithmetic, parallel neurons, phase folding, and a pipelined CORDIC sine engine.
 
@@ -67,3 +67,57 @@ flowchart LR
     class A input
     class B,C,D,E,F,G process
     class H output
+---
+```
+## 4. Latency & Timing Profile
+
+| Pipeline Stage | Cycles | Description |
+| :--- | :---: | :--- |
+| **Coordinate MAC** | 2 | Accumulates $x \cdot w_0 + y \cdot w_1 + \text{bias}$ |
+| **Omega-0 Scaler** | 1 | Scales intermediate sum by $\omega_0 = 30.0$ |
+| **Phase Folder** | 1 | Angle reduction to $[-\pi, \pi]$ |
+| **CORDIC Engine** | 16 | 16 cascaded shift-and-add rotation stages |
+| **Layer 2 Combiner** | 1 | Registered sum-of-products reduction + saturation |
+| **Total Pipeline Latency** | **21 Cycles** | Fully pipelined; throughput is 1 pixel per coordinate pair |
+
+---
+
+## 5. Verification & Benchmark Results
+
+The accelerator was validated through a closed-loop Python co-simulation flow. Output hex data dumped by Icarus Verilog was converted back to normalized floating-point values and benchmarked against standard reference images on a $32 \times 32$ grid:
+
+| Metric | Floating-Point Golden Model | RTL Hardware Output (Q4.12) |
+| :--- | :---: | :---: |
+| **Peak Signal-to-Noise Ratio (PSNR)** | 28.52 dB | **28.49 dB** |
+| **Structural Similarity Index (SSIM)** | 0.9950 | **0.9950** |
+| **Data Format** | IEEE-754 64-bit Float | Signed Q4.12 Fixed-Point |
+| **Quantization Noise Floor** | Ideal ($0\text{ dB}$) | **-28.5 dB** (Matches LSB truncation) |
+
+---
+
+## 6. Directory Structure
+
+```text
+├── doc/
+│   ├── datapath_architecture.png   # Block diagram
+│   └── reconstructed_output.png    # Rendered hardware output
+├── rtl/
+│   ├── inr_pkg.sv                  # Package: Constants, Q-formats, and angle LUT
+│   ├── mac_unit.sv                 # 2-cycle coordinate MAC accumulator
+│   ├── siren_scaler.sv             # Multiplier for omega_0 (30.0)
+│   ├── phase_folder.sv             # Angle reduction module
+│   ├── cordic_stage.sv             # Elementary shift-and-add rotation stage
+│   ├── cordic_wrapper.sv           # 16-stage unrolled CORDIC pipeline
+│   ├── siren_neuron.sv             # Single-neuron SIREN module
+│   └── siren_network.sv            # 16-neuron parallel layer + L2 combiner
+├── sim/
+│   ├── tb_image_recon_16n.sv       # Top-level testbench
+│   ├── coords.hex                  # Input test coordinates
+│   ├── layer1_weights.hex          # Layer 1 weights and biases
+│   ├── layer2_weights.hex          # Layer 2 weights and bias
+│   └── out_pixels.hex              # Raw RTL simulation hex output
+├── sw/
+│   ├── train_siren.py              # PyTorch model training and hex exporter
+│   └── evaluate_metrics.py         # Hex parser, PSNR/SSIM, and rendering script
+├── run_sim.sh                      # Shell script for automated compile and run
+└── README.md
