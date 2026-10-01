@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 import inr_pkg::*;
 
-module tb_image_recon_16n;
+module tb_image_recon_32n;
 
     localparam int NUM_NEURONS  = 32;
     localparam int TOTAL_PIXELS = 1024;

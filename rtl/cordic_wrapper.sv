@@ -44,7 +44,7 @@ module cordic_wrapper (
     endgenerate
 
     assign valid_out = valid_pipe[CORDIC_STAGES];
-    assign cos_out   = x_pipe[CORDIC_STAGES] >>> 2;
-    assign sin_out   = y_pipe[CORDIC_STAGES] >>> 2;
+    assign cos_out   = x_pipe[CORDIC_STAGES];
+    assign sin_out   = y_pipe[CORDIC_STAGES];
 
 endmodule

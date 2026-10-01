@@ -1,0 +1,11 @@
+--- Hardware Verification Run ---
+Thu Oct  1 12:57:09 PM IST 2026
+sim/tb_recon.vvp: Unable to open input file.
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.001568
+ Peak SNR (PSNR)          : 28.05 dB
+ Structural Sim. (SSIM)   : 0.9904
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png

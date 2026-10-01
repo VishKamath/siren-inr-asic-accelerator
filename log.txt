@@ -1,0 +1,582 @@
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator/rtl$ git pull origin main
+remote: Enumerating objects: 7, done.
+remote: Counting objects: 100% (7/7), done.
+remote: Compressing objects: 100% (3/3), done.
+remote: Total 4 (delta 1), reused 4 (delta 1), pack-reused 0 (from 0)
+Unpacking objects: 100% (4/4), 3.17 KiB | 1.59 MiB/s, done.
+From https://github.com/VishKamath/siren-inr-asic-accelerator
+ * branch            main       -> FETCH_HEAD
+   bdec0fa..2cdb444  main       -> origin/main
+Updating bdec0fa..2cdb444
+Fast-forward
+ sw/train_siren.py | 369 ++++++++++++++++++++++++++++++++++++++++++++++++++++---------------------------
+ 1 file changed, 243 insertions(+), 126 deletions(-)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator/rtl$ cd ..
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ ls -l
+total 268
+-rw-r--r--. 1 vishalkamath vishalkamath 10240 Sep 16 23:31 coords.hex
+drwxr-xr-x. 1 vishalkamath vishalkamath   156 Sep 22 00:35 doc
+-rw-r--r--. 1 vishalkamath vishalkamath  1596 Sep 16 23:50 export_reconi.py
+-rw-r--r--. 1 vishalkamath vishalkamath  1627 Sep 16 23:30 export_stimuli.py
+-rw-rw-r--. 1 vishalkamath vishalkamath     0 Sep 16 13:24 flex505.log
+-rw-rw-r--. 1 vishalkamath vishalkamath   347 Sep 16 13:25 genus.cmd
+-rw-rw-r--. 1 vishalkamath vishalkamath  2879 Sep 16 13:25 genus.log
+-rw-r--r--. 1 vishalkamath vishalkamath  8320 Sep 16 23:31 golden_image.npy
+-rw-r--r--. 1 vishalkamath vishalkamath  7772 Aug 27 10:56 goldenref.py
+drwxr-xr-x. 1 vishalkamath vishalkamath   608 Sep 16 11:57 OpenSTA
+-rw-r--r--. 1 vishalkamath vishalkamath  5120 Sep 17 23:26 out_pixels.hex
+drwxrwxr-x. 1 vishalkamath vishalkamath    60 Sep 16 13:35 outputs
+-rw-r--r--. 1 vishalkamath vishalkamath   413 Sep 22 00:39 photo.py
+-rw-r--r--. 1 vishalkamath vishalkamath  5846 Sep 22 01:23 README.md
+-rw-r--r--. 1 vishalkamath vishalkamath 21482 Sep 17 23:31 reconstructed_output.png
+drwxrwxr-x. 1 vishalkamath vishalkamath   124 Sep 16 13:35 reports
+drwxrwxr-x. 1 vishalkamath vishalkamath   466 Sep 22 00:56 rtl
+drwxrwxr-x. 1 vishalkamath vishalkamath   332 Sep 16 13:35 scripts
+drwxrwxr-x. 1 vishalkamath vishalkamath   344 Sep 22 00:54 sim
+drwxr-xr-x. 1 vishalkamath vishalkamath    66 Oct  1 11:51 sw
+-rw-r--r--. 1 vishalkamath vishalkamath   740 Sep 22 00:41 target_photo.png
+-rwxr-xr-x. 1 vishalkamath vishalkamath 84824 Sep 17 23:25 tb_recon_sim
+-rwxr-xr-x. 1 vishalkamath vishalkamath 82428 Sep 16 23:42 tb_sim
+drwxrwxr-x. 1 vishalkamath vishalkamath    68 Sep 16 13:11 vcd
+-rw-r--r--. 1 vishalkamath vishalkamath    15 Sep 16 23:31 weights.hex
+drwxrwxr-x. 1 vishalkamath vishalkamath    54 Sep 16 13:11 yosys
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ cd sw
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator/sw$ cd ..
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network.sv     rtl/tb_image_recon_16n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_32n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_image_recon_16n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.008759
+ Peak SNR (PSNR)          : 20.58 dB
+ Structural Sim. (SSIM)   : 0.9374
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/train_siren.py
+[TRAIN] Running QAT for 32-neuron SIREN (w0=18.0, 8000 epochs)...
+  Epoch  1000 | QAT MSE: 0.004806 | Clamped PSNR: 23.18 dB | Total Loss: 0.004806
+  Epoch  2000 | QAT MSE: 0.004315 | Clamped PSNR: 23.65 dB | Total Loss: 0.004318
+  Epoch  3000 | QAT MSE: 0.004148 | Clamped PSNR: 23.82 dB | Total Loss: 0.004148
+  Epoch  4000 | QAT MSE: 0.004020 | Clamped PSNR: 23.96 dB | Total Loss: 0.004020
+  Epoch  5000 | QAT MSE: 0.003854 | Clamped PSNR: 24.14 dB | Total Loss: 0.003854
+  Epoch  6000 | QAT MSE: 0.003749 | Clamped PSNR: 24.26 dB | Total Loss: 0.003749
+  Epoch  7000 | QAT MSE: 0.003615 | Clamped PSNR: 24.42 dB | Total Loss: 0.003616
+  Epoch  8000 | QAT MSE: 0.003578 | Clamped PSNR: 24.46 dB | Total Loss: 0.003579
+
+[MODEL] Expected Hardware Q4.12 PSNR: 24.46 dB
+[SUCCESS] Calibrated parameters for 32 neurons exported to sim/
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.008759
+ Peak SNR (PSNR)          : 20.58 dB
+ Structural Sim. (SSIM)   : 0.9374
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network.sv     rtl/tb_image_recon_16n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_32n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_image_recon_16n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.218176
+ Peak SNR (PSNR)          : 6.61 dB
+ Structural Sim. (SSIM)   : 0.1440
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ gedit sw/train_siren.py 
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/train_siren.py
+[STAGE 1] Float Convergence (5000 epochs, w0=30.0)...
+  Epoch 1000 | Float PSNR: 24.11 dB | Loss: 0.003884
+  Epoch 2000 | Float PSNR: 24.82 dB | Loss: 0.003294
+  Epoch 3000 | Float PSNR: 25.07 dB | Loss: 0.003110
+  Epoch 4000 | Float PSNR: 25.11 dB | Loss: 0.003082
+  Epoch 5000 | Float PSNR: 25.12 dB | Loss: 0.003078
+[STAGE 2] QAT Fine-Tuning (2000 epochs, lr=5e-4)...
+  QAT Epoch  500 | Simulated HW PSNR: 25.12 dB | Loss: 0.003082
+  QAT Epoch 1000 | Simulated HW PSNR: 25.11 dB | Loss: 0.003083
+  QAT Epoch 1500 | Simulated HW PSNR: 25.13 dB | Loss: 0.003071
+  QAT Epoch 2000 | Simulated HW PSNR: 25.13 dB | Loss: 0.003071
+
+[FINAL BENCHMARK] Fixed-Point Emulated PSNR: 25.13 dB
+[SUCCESS] Exported calibrated parameters to sim/
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network.sv     rtl/tb_image_recon_16n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.218176
+ Peak SNR (PSNR)          : 6.61 dB
+ Structural Sim. (SSIM)   : 0.1440
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_32n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_image_recon_16n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.008737
+ Peak SNR (PSNR)          : 20.59 dB
+ Structural Sim. (SSIM)   : 0.9377
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network.sv     rtl/tb_img_recon64n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_32n
+WARNING: rtl/tb_img_recon64n.sv:85: $readmemh(sim/layer1_weights.hex): Not enough words in the file for the requested range [0:127].
+WARNING: rtl/tb_img_recon64n.sv:86: $readmemh(sim/layer1_biases.hex): Not enough words in the file for the requested range [0:63].
+WARNING: rtl/tb_img_recon64n.sv:87: $readmemh(sim/layer2_weights.hex): Not enough words in the file for the requested range [0:63].
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_img_recon64n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/train_siren.py --neurons 64 -w0 30.0
+usage: train_siren.py [-h] [--neurons NEURONS] [--w0 W0] [--epochs EPOCHS]
+train_siren.py: error: unrecognized arguments: -w0 30.0
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/train_siren.py --neurons 64 --w0 30.0
+[STAGE 1] Float Convergence (5000 epochs, w0=30.0)...
+  Epoch 1000 | Float PSNR: 25.98 dB | Loss: 0.002532
+  Epoch 2000 | Float PSNR: 26.80 dB | Loss: 0.002092
+  Epoch 3000 | Float PSNR: 27.03 dB | Loss: 0.001983
+  Epoch 4000 | Float PSNR: 27.34 dB | Loss: 0.001849
+  Epoch 5000 | Float PSNR: 27.38 dB | Loss: 0.001829
+[STAGE 2] QAT Fine-Tuning (2000 epochs, lr=5e-4)...
+  QAT Epoch  500 | Simulated HW PSNR: 27.49 dB | Loss: 0.001785
+  QAT Epoch 1000 | Simulated HW PSNR: 27.57 dB | Loss: 0.001752
+  QAT Epoch 1500 | Simulated HW PSNR: 27.62 dB | Loss: 0.001733
+  QAT Epoch 2000 | Simulated HW PSNR: 27.62 dB | Loss: 0.001734
+
+[FINAL BENCHMARK] Fixed-Point Emulated PSNR: 27.62 dB
+[SUCCESS] Exported calibrated parameters to sim/
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network.sv     rtl/tb_img_recon64n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_32n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+^[[A[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_img_recon64n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.006985
+ Peak SNR (PSNR)          : 21.56 dB
+ Structural Sim. (SSIM)   : 0.9527
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network_64n.sv     rtl/tb_img_recon64n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_32n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_img_recon64n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.006985
+ Peak SNR (PSNR)          : 21.56 dB
+ Structural Sim. (SSIM)   : 0.9527
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_64n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network_64n.sv     rtl/tb_img_recon64n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_64n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_img_recon64n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.006985
+ Peak SNR (PSNR)          : 21.56 dB
+ Structural Sim. (SSIM)   : 0.9527
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/train_siren.py --neurons 64 --w0 30.0
+[STAGE 1] Float Convergence (5000 epochs, w0=30.0)...
+  Epoch 1000 | Float PSNR: 25.98 dB | Loss: 0.002532
+  Epoch 2000 | Float PSNR: 26.80 dB | Loss: 0.002092
+  Epoch 3000 | Float PSNR: 27.03 dB | Loss: 0.001983
+  Epoch 4000 | Float PSNR: 27.34 dB | Loss: 0.001849
+  Epoch 5000 | Float PSNR: 27.38 dB | Loss: 0.001829
+[STAGE 2] QAT Fine-Tuning (2000 epochs, lr=5e-4)...
+  QAT Epoch  500 | Simulated HW PSNR: 27.49 dB | Loss: 0.001785
+  QAT Epoch 1000 | Simulated HW PSNR: 27.57 dB | Loss: 0.001752
+  QAT Epoch 1500 | Simulated HW PSNR: 27.62 dB | Loss: 0.001733
+  QAT Epoch 2000 | Simulated HW PSNR: 27.62 dB | Loss: 0.001734
+
+[FINAL BENCHMARK] Fixed-Point Emulated PSNR: 27.62 dB
+[SUCCESS] Exported calibrated parameters to sim/
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_64n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network_64n.sv     rtl/tb_img_recon64n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_64n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_img_recon64n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.006985
+ Peak SNR (PSNR)          : 21.56 dB
+ Structural Sim. (SSIM)   : 0.9527
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_64n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network_64n.sv     rtl/tb_img_recon64n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_64n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_img_recon64n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.006985
+ Peak SNR (PSNR)          : 21.56 dB
+ Structural Sim. (SSIM)   : 0.9527
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_64n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network_64n.sv     rtl/tb_img_recon64n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_64n
+[SIM START] Streaming 1024 coordinate pairs into 64-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_img_recon64n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ head -n 20 sim/out_pixels.hex 
+0c4e
+0c9d
+0e74
+0be2
+0c78
+0bfd
+09ec
+0e77
+0c88
+0a5a
+0b53
+0b44
+0b20
+0aca
+0a43
+0bef
+0a94
+0c88
+0be0
+0998
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ grep -ci sim/out_pixels.hex 
+
+^C
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ grep -ci "7fff" sim/out_pixels.hex 
+0
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ wc -l sim/layer1_weights.hex
+128 sim/layer1_weights.hex
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ wc -l sim/layer2_weights.hex
+64 sim/layer2_weights.hex
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_64n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network_64n.sv     rtl/tb_img_recon64n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_64n
+[TB CHECK] NUM_NEURONS = 64 | L1 Weight 0: 05b6 | L1 Weight 127: ffb7
+[SIM START] Streaming 1024 coordinate pairs into 64-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_img_recon64n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 -c "
+import numpy as np
+from PIL import Image
+
+def hex_to_f(h):
+    v = int(h.strip(), 16)
+    if v >= 0x8000: v -= 0x10000
+    return v / 4096.0
+
+lines = [line.strip() for line in open('sim/out_pixels.hex') if line.strip()]
+recon = np.array([hex_to_f(x) for x in lines[:1024]]).reshape(32, 32)
+recon = np.clip(recon, 0.0, 1.0)
+
+gt = np.load('doc/target_ground_truth.npy')
+mse = np.mean((gt - recon)**2)
+psnr = 10.0 * np.log10(1.0 / (mse + 1e-12))
+print('Direct PSNR vs target_ground_truth.npy:', psnr)
+"
+Direct PSNR vs target_ground_truth.npy: 21.5583166711068
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ ^C
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_64n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network_64n.sv     rtl/tb_img_recon64n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_64n
+[TB CHECK] NUM_NEURONS = 64 | L1 Weight 0: 05b6 | L1 Weight 127: ffb7
+[SIM START] Streaming 1024 coordinate pairs into 64-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_img_recon64n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.001810
+ Peak SNR (PSNR)          : 27.42 dB
+ Structural Sim. (SSIM)   : 0.9876
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python sw/train_siren.py --neurons 32 --w0 20.0
+[STAGE 1] Float Convergence (5000 epochs, w0=20.0)...
+  Epoch 1000 | Float PSNR: 23.41 dB | Loss: 0.004565
+  Epoch 2000 | Float PSNR: 23.75 dB | Loss: 0.004213
+  Epoch 3000 | Float PSNR: 24.01 dB | Loss: 0.003975
+  Epoch 4000 | Float PSNR: 24.12 dB | Loss: 0.003874
+  Epoch 5000 | Float PSNR: 24.14 dB | Loss: 0.003858
+[STAGE 2] QAT Fine-Tuning (2000 epochs, lr=5e-4)...
+  QAT Epoch  500 | Simulated HW PSNR: 24.21 dB | Loss: 0.003792
+  QAT Epoch 1000 | Simulated HW PSNR: 24.25 dB | Loss: 0.003757
+  QAT Epoch 1500 | Simulated HW PSNR: 24.28 dB | Loss: 0.003737
+  QAT Epoch 2000 | Simulated HW PSNR: 24.27 dB | Loss: 0.003739
+
+[FINAL BENCHMARK] Fixed-Point Emulated PSNR: 24.28 dB
+[SUCCESS] Exported calibrated parameters to sim/
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network.sv     rtl/tb_img_recon_16N.sv
+rtl/tb_img_recon_16N.sv: No such file or directory
+Preprocessor failed with 1 errors.
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network.sv     rtl/tb_img_recon_16n.sv
+rtl/tb_img_recon_16n.sv: No such file or directory
+Preprocessor failed with 1 errors.
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network.sv     rtl/tb_image_recon_16n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_32n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_image_recon_16n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.209818
+ Peak SNR (PSNR)          : 6.78 dB
+ Structural Sim. (SSIM)   : 0.1831
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python sw/train_siren.py --neurons 32 --w0 20.0
+[STAGE 1] Float Convergence (5000 epochs, w0=20.0)...
+  Epoch 1000 | Float PSNR: 23.41 dB | Loss: 0.004565
+  Epoch 2000 | Float PSNR: 23.75 dB | Loss: 0.004213
+  Epoch 3000 | Float PSNR: 24.01 dB | Loss: 0.003975
+  Epoch 4000 | Float PSNR: 24.12 dB | Loss: 0.003874
+  Epoch 5000 | Float PSNR: 24.14 dB | Loss: 0.003858
+[STAGE 2] QAT Fine-Tuning (2000 epochs, lr=5e-4)...
+  QAT Epoch  500 | Simulated HW PSNR: 24.21 dB | Loss: 0.003792
+  QAT Epoch 1000 | Simulated HW PSNR: 24.25 dB | Loss: 0.003757
+  QAT Epoch 1500 | Simulated HW PSNR: 24.28 dB | Loss: 0.003737
+  QAT Epoch 2000 | Simulated HW PSNR: 24.27 dB | Loss: 0.003739
+
+[FINAL BENCHMARK] Fixed-Point Emulated PSNR: 24.28 dB
+[SUCCESS] Exported calibrated parameters to sim/
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network.sv     rtl/tb_image_recon_16n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_32n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_image_recon_16n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.209818
+ Peak SNR (PSNR)          : 6.78 dB
+ Structural Sim. (SSIM)   : 0.1831
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ wc -l sim/layer1_weights.hex
+64 sim/layer1_weights.hex
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ wc -l sim/layer1_biases.hex
+32 sim/layer1_biases.hex
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ wc -l sim/layer1_weights.hex 
+64 sim/layer1_weights.hex
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ wc -l sim/layer2_weights.hex 
+32 sim/layer2_weights.hex
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ wc -l sim/layer2_bias.hex 
+1 sim/layer2_bias.hex
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python sw/train_siren.py --neurons 32 --w0 30.0
+[STAGE 1] Float Convergence (5000 epochs, w0=30.0)...
+  Epoch 1000 | Float PSNR: 24.11 dB | Loss: 0.003884
+  Epoch 2000 | Float PSNR: 24.82 dB | Loss: 0.003294
+  Epoch 3000 | Float PSNR: 25.07 dB | Loss: 0.003110
+  Epoch 4000 | Float PSNR: 25.11 dB | Loss: 0.003082
+  Epoch 5000 | Float PSNR: 25.12 dB | Loss: 0.003078
+[STAGE 2] QAT Fine-Tuning (2000 epochs, lr=5e-4)...
+  QAT Epoch  500 | Simulated HW PSNR: 25.12 dB | Loss: 0.003082
+  QAT Epoch 1000 | Simulated HW PSNR: 25.11 dB | Loss: 0.003083
+  QAT Epoch 1500 | Simulated HW PSNR: 25.13 dB | Loss: 0.003071
+  QAT Epoch 2000 | Simulated HW PSNR: 25.13 dB | Loss: 0.003071
+
+[FINAL BENCHMARK] Fixed-Point Emulated PSNR: 25.13 dB
+[SUCCESS] Exported calibrated parameters to sim/
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_32n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network.sv     rtl/tb_image_recon_16n.sv
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_32n
+[SIM START] Streaming 1024 coordinate pairs into 32-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_image_recon_16n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.003106
+ Peak SNR (PSNR)          : 25.08 dB
+ Structural Sim. (SSIM)   : 0.9778
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python sw/train_siren.py --neurons 128 --w0 30.0
+[STAGE 1] Float Convergence (5000 epochs, w0=30.0)...
+  Epoch 1000 | Float PSNR: 27.45 dB | Loss: 0.001802
+  Epoch 2000 | Float PSNR: 28.02 dB | Loss: 0.001584
+  Epoch 3000 | Float PSNR: 28.61 dB | Loss: 0.001386
+  Epoch 4000 | Float PSNR: 28.76 dB | Loss: 0.001335
+  Epoch 5000 | Float PSNR: 28.79 dB | Loss: 0.001326
+[STAGE 2] QAT Fine-Tuning (2000 epochs, lr=5e-4)...
+  QAT Epoch  500 | Simulated HW PSNR: 28.83 dB | Loss: 0.001315
+  QAT Epoch 1000 | Simulated HW PSNR: 28.91 dB | Loss: 0.001291
+  QAT Epoch 1500 | Simulated HW PSNR: 28.95 dB | Loss: 0.001279
+  QAT Epoch 2000 | Simulated HW PSNR: 28.96 dB | Loss: 0.001274
+
+[FINAL BENCHMARK] Fixed-Point Emulated PSNR: 28.96 dB
+[SUCCESS] Exported calibrated parameters to sim/
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ iverilog -g2012 -o sim/tb_recon_128n     rtl/inr_pkg.sv     rtl/mac_unit.sv     rtl/siren_scaler.sv     rtl/phase_folder.sv     rtl/cordic_stage.sv     rtl/cordic_wrapper.sv     rtl/siren_act_unit.sv     rtl/siren_neuron.sv     rtl/siren_network_128n.sv     rtl/tb_img_recon128n.sv 
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ vvp sim/tb_recon_128n
+[TB CHECK] NUM_NEURONS = 128 | L1 Weight 0: 00ad | L1 Weight 127: f864
+[SIM START] Streaming 1024 coordinate pairs into 128-neuron SIREN...
+[SIM INFO] Processed 128 / 1024 pixels...
+[SIM INFO] Processed 256 / 1024 pixels...
+[SIM INFO] Processed 384 / 1024 pixels...
+[SIM INFO] Processed 512 / 1024 pixels...
+[SIM INFO] Processed 640 / 1024 pixels...
+[SIM INFO] Processed 768 / 1024 pixels...
+[SIM INFO] Processed 896 / 1024 pixels...
+[SIM INFO] Processed 1024 / 1024 pixels...
+[SUCCESS] All 1024 pixels processed and captured.
+rtl/tb_img_recon128n.sv:72: $finish called at 20755000 (1ps)
+vishalkamath@fedora:~/Desktop/ImageUpscalerAccelerator$ python3 sw/evaluate_metrics.py
+==================================================
+        HARDWARE RECONSTRUCTION EVALUATION        
+==================================================
+ Mean Squared Error (MSE) : 0.001568
+ Peak SNR (PSNR)          : 28.05 dB
+ Structural Sim. (SSIM)   : 0.9904
+==================================================
+[INFO] Saved side-by-side reconstruction plot to doc/reconstructed_output.png
+

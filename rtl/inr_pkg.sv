@@ -23,12 +23,12 @@ package inr_pkg;
     parameter int WMEM_DEPTH       = (FFM_OUT_DIM * HIDDEN_DIM) + (HIDDEN_DIM * HIDDEN_DIM) + (HIDDEN_DIM * OUT_DIM);
 
     parameter int CORDIC_STAGES    = 16;
-    parameter logic signed [15:0] CORDIC_K = 16'sh4DBA;
+    parameter logic signed [15:0] CORDIC_K = 16'sh09B7; // 2487 (1/K in Q4.12)
     parameter logic signed [255:0] CORDIC_ATAN_LUT = {
-        16'sh2000, 16'sh12E4, 16'sh09FB, 16'sh0511,
-        16'sh028B, 16'sh0146, 16'sh00A3, 16'sh0051,
-        16'sh0029, 16'sh0014, 16'sh000A, 16'sh0005,
-        16'sh0003, 16'sh0001, 16'sh0001, 16'sh0000
+        16'sh0C91, 16'sh076B, 16'sh03EB, 16'sh01FD,
+        16'sh0100, 16'sh0080, 16'sh0040, 16'sh0020,
+        16'sh0010, 16'sh0008, 16'sh0004, 16'sh0002,
+        16'sh0001, 16'sh0001, 16'sh0000, 16'sh0000
     };
 
     typedef logic signed [COORD_WIDTH-1:0] coord_t;
