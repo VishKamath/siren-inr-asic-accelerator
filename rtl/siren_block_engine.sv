@@ -44,7 +44,7 @@ logic tile_valid_in;
 logic signed [DATA_WIDTH-1:0] neuron_act_out [0:3];
 logic neuron_valid_lanes [0:BLOCK_SIZE-1];
 logic tile_valid_out;
-
+logic adder_valid_q;
 logic signed [DATA_WIDTH-1:0] w2_delay_pipe [0:TILE_LATENCY-1][0:3];
 logic signed [DATA_WIDTH-1:0] w2_aligned [0:3];
 
@@ -54,6 +54,10 @@ logic signed [PROD_WIDTH:0] tree_sum_01;
 logic signed [PROD_WIDTH:0] tree_sum_23;
 logic signed [PROD_WIDTH+1:0] block_sum;
 logic signed [ACC_WIDTH-1:0] acc_reg;
+
+logic signed [ACC_WIDTH-1:0] acc_with_bias;
+logic signed [27:0] pre_clamp;
+
 
 typedef enum logic [1:0] {
 ST_IDLE,
@@ -93,7 +97,7 @@ always_ff @(posedge clk or negedge rst_in) begin
 end
 genvar lane;
 generate 
-for (LANE=0;LANE<BLOCK_SIZE;LANE++)  begin :gen_physical_neurons
+for (lane=0;lane<BLOCK_SIZE;lane++)  begin :gen_physical_neurons
 	siren_neuron sn (
         .clk       (clk),
         .rst_in    (rst_in),
@@ -152,7 +156,7 @@ always_ff @(posedge clk or negedge rst_in) begin
 	end
 	else begin
 		for (int lane=0;lane<BLOCK_SIZE;lane++) begin 
-			l2_prod_q[lane]<=l2_prod_lane;
+			l2_prod_q[lane]<=l2_prod[lane];
 		end
 	end
 end
@@ -164,9 +168,82 @@ always_comb begin
 end
 
 
+always_ff @(posedge clk or negedge rst_in) begin
+	if (!rst_in) begin 
+		state_q<=ST_IDLE;
+		coord_x_latched <=0;
+		coord_y_latched<=0;
+		pass_issue_cnt<=0;
+	end
+	else begin 
+		state_q<=state_d;
+	case(state_q)
+		ST_IDLE: if (start_eval) begin
+				coord_x_latched<=coord_x;
+				coord_y_latched<=coord_y;
+				pass_issue_cnt<=0;
+			 end
+		ST_FEED:begin pass_issue_cnt <= pass_issue_cnt+1'b1;end
+		default : ;
+	endcase
+	end
+end
 
+always_comb begin 
+	state_d =state_q;
+	case(state_q) 	
+		ST_IDLE:begin 
+				if (start_eval) begin state_d=ST_FEED;	end		
+			end
+		ST_FEED:begin 
+				if (pass_issue_cnt==NUM_PASSES-1) begin
+					state_d=ST_DRAIN;
+				end
+			end
+		ST_DRAIN:begin 
+			 	if (pass_retire_cnt==NUM_PASSES) begin 
+					state_d=ST_FINALIZE;
+				end
+			 end	
+		ST_FINALIZE: begin 
+			     		state_d=ST_IDLE;
+			     end
+		default:state_d=ST_IDLE;
+	endcase
+end
+assign tile_valid_in=(state_q==ST_FEED);
+always_ff @(posedge clk or negedge rst_in) begin 
+	if (!rst_in) begin 
+		adder_valid_q<=0;
+		pass_retire_cnt<=0;
+		acc_reg<='0;
+	end
+	else begin 
+		adder_valid_q<=tile_valid_out;
+		if (state_q==ST_IDLE) begin 
+			pass_retire_cnt<=0;
+			acc_reg<=0;		
+		end
+		if (adder_valid_q) begin 
+			pass_retire_cnt <= pass_retire_cnt+1'b1;
+			acc_reg<=acc_reg+40'($signed(block_sum));		
+		end
+	end
 
-
-
-
+end
+always_comb begin 
+	acc_with_bias=acc_reg+40'($signed({b2_bias,12'b0}));
+	pre_clamp=acc_with_bias>>>12;
+	if (pre_clamp > 28'sh0007FFF) begin
+		pixel_out=16'sh7FFF;
+	end	
+	else if (pre_clamp <-28'sh0008000) begin 
+		pixel_out=16'sh8000;	
+	end
+	else begin 
+		pixel_out=pre_clamp[15:0];	
+	end
+end
+assign busy            = (state_q != ST_IDLE);
+assign pixel_valid_out = (state_q == ST_FINALIZE);
 endmodule
