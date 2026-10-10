@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 import inr_pkg::*;
 
-module siren_network_nVIIV #(
+module siren_network_niiiviii #(
     parameter int NUM_NEURONS = 128
 )(
     input  logic                     clk,

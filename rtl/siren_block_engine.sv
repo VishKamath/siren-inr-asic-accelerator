@@ -3,7 +3,7 @@ import inr_pkg::*;
 
 module siren_block_engine
 #(
-  parameter int TOTAL_NEURONS = 32,
+  parameter int TOTAL_NEURONS = 64,
   parameter int BLOCK_SIZE    = 4,
   parameter int NUM_PASSES    = (TOTAL_NEURONS / BLOCK_SIZE),
   parameter int PASS_WIDTH    = $clog2(NUM_PASSES),
@@ -50,16 +50,9 @@ module siren_block_engine
   logic                         neuron_valid_lanes [0:BLOCK_SIZE-1];
   logic                         tile_valid_out;
 
-  // Stored weights per pass (latched during ST_FEED)
-  logic signed [DATA_WIDTH-1:0] w2_p0 [0:BLOCK_SIZE-1];
-  logic signed [DATA_WIDTH-1:0] w2_p1 [0:BLOCK_SIZE-1];
-  logic signed [DATA_WIDTH-1:0] w2_p2 [0:BLOCK_SIZE-1];
-  logic signed [DATA_WIDTH-1:0] w2_p3 [0:BLOCK_SIZE-1];
-  logic signed [DATA_WIDTH-1:0] w2_p4 [0:BLOCK_SIZE-1];
-  logic signed [DATA_WIDTH-1:0] w2_p5 [0:BLOCK_SIZE-1];
-  logic signed [DATA_WIDTH-1:0] w2_p6 [0:BLOCK_SIZE-1];
-  logic signed [DATA_WIDTH-1:0] w2_p7 [0:BLOCK_SIZE-1];
-  logic signed [DATA_WIDTH-1:0] w2_current [0:BLOCK_SIZE-1];
+  // Fully parameterized 2D array for latched W2 pass weights
+  logic signed [DATA_WIDTH-1:0] w2_pass_reg [0:NUM_PASSES-1][0:BLOCK_SIZE-1];
+  logic signed [DATA_WIDTH-1:0] w2_current  [0:BLOCK_SIZE-1];
 
   logic signed [PROD_WIDTH-1:0] l2_prod_raw [0:BLOCK_SIZE-1];
   logic signed [DATA_WIDTH-1:0] l2_prod_q   [0:BLOCK_SIZE-1];
@@ -124,25 +117,18 @@ module siren_block_engine
     end
   end
 
-  // Latch W2 weights into per-pass registers during ST_FEED
+  // Latch W2 weights per pass
   always_ff @(posedge clk or negedge rst_in) begin
     if (!rst_in) begin
-      for (int l = 0; l < BLOCK_SIZE; l++) begin
-        w2_p0[l] <= '0; w2_p1[l] <= '0; w2_p2[l] <= '0; w2_p3[l] <= '0;
-        w2_p4[l] <= '0; w2_p5[l] <= '0; w2_p6[l] <= '0; w2_p7[l] <= '0;
+      for (int p = 0; p < NUM_PASSES; p++) begin
+        for (int l = 0; l < BLOCK_SIZE; l++) begin
+          w2_pass_reg[p][l] <= '0;
+        end
       end
     end else if (state_q == ST_FEED) begin
-      case (pass_issue_cnt)
-        3'd0: for (int l = 0; l < BLOCK_SIZE; l++) w2_p0[l] <= w2_mux[l];
-        3'd1: for (int l = 0; l < BLOCK_SIZE; l++) w2_p1[l] <= w2_mux[l];
-        3'd2: for (int l = 0; l < BLOCK_SIZE; l++) w2_p2[l] <= w2_mux[l];
-        3'd3: for (int l = 0; l < BLOCK_SIZE; l++) w2_p3[l] <= w2_mux[l];
-        3'd4: for (int l = 0; l < BLOCK_SIZE; l++) w2_p4[l] <= w2_mux[l];
-        3'd5: for (int l = 0; l < BLOCK_SIZE; l++) w2_p5[l] <= w2_mux[l];
-        3'd6: for (int l = 0; l < BLOCK_SIZE; l++) w2_p6[l] <= w2_mux[l];
-        3'd7: for (int l = 0; l < BLOCK_SIZE; l++) w2_p7[l] <= w2_mux[l];
-        default: ;
-      endcase
+      for (int l = 0; l < BLOCK_SIZE; l++) begin
+        w2_pass_reg[pass_issue_cnt][l] <= w2_mux[l];
+      end
     end
   end
 
@@ -169,19 +155,17 @@ module siren_block_engine
 
   assign tile_valid_out = neuron_valid_lanes[0];
 
-  // Select W2 using pass_retire_cnt
+  // Dynamically select W2 using pass_retire_cnt
   always_comb begin
-    case (pass_retire_cnt[2:0])
-      3'd0: for (int l = 0; l < BLOCK_SIZE; l++) w2_current[l] = w2_p0[l];
-      3'd1: for (int l = 0; l < BLOCK_SIZE; l++) w2_current[l] = w2_p1[l];
-      3'd2: for (int l = 0; l < BLOCK_SIZE; l++) w2_current[l] = w2_p2[l];
-      3'd3: for (int l = 0; l < BLOCK_SIZE; l++) w2_current[l] = w2_p3[l];
-      3'd4: for (int l = 0; l < BLOCK_SIZE; l++) w2_current[l] = w2_p4[l];
-      3'd5: for (int l = 0; l < BLOCK_SIZE; l++) w2_current[l] = w2_p5[l];
-      3'd6: for (int l = 0; l < BLOCK_SIZE; l++) w2_current[l] = w2_p6[l];
-      3'd7: for (int l = 0; l < BLOCK_SIZE; l++) w2_current[l] = w2_p7[l];
-      default: for (int l = 0; l < BLOCK_SIZE; l++) w2_current[l] = 16'sh0;
-    endcase
+    if (pass_retire_cnt < NUM_PASSES) begin
+      for (int l = 0; l < BLOCK_SIZE; l++) begin
+        w2_current[l] = w2_pass_reg[pass_retire_cnt[PASS_WIDTH-1:0]][l];
+      end
+    end else begin
+      for (int l = 0; l < BLOCK_SIZE; l++) begin
+        w2_current[l] = 16'sh0;
+      end
+    end
   end
 
   // =========================================================================
@@ -237,7 +221,6 @@ module siren_block_engine
         if (start_eval) state_d = ST_FEED;
       end
       ST_FEED: begin 
-        // Feed for 8 clock cycles to register affine values and send 8 valid pulses into tile
         if (feed_cycle_cnt == NUM_PASSES) begin
           state_d = ST_DRAIN;
         end
@@ -254,7 +237,6 @@ module siren_block_engine
     endcase
   end
 
-  // tile_valid_in is registered to align with the 1-cycle latency of tile_affine_q
   always_ff @(posedge clk or negedge rst_in) begin
     if (!rst_in) begin
       tile_valid_in <= 1'b0;
@@ -280,7 +262,7 @@ module siren_block_engine
         if (!drain_started) begin
           if (tile_valid_out && (neuron_act_out[0] != 16'sh0001)) begin
             drain_started   <= 1'b1;
-            pass_retire_cnt <= 3'd1;
+            pass_retire_cnt <= 'd1;
             acc_reg         <= 40'($signed(block_sum_q12));
           end
         end else if (pass_retire_cnt < NUM_PASSES) begin
@@ -291,7 +273,6 @@ module siren_block_engine
     end
   end
 
-  // Output formatting & clamp
   always_comb begin 
     final_sum = acc_reg + 40'($signed(b2_bias));
 

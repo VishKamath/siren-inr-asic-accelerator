@@ -17,19 +17,31 @@ module tb_image_recon128n;
     logic signed [15:0] l2_w_in    [0:NUM_NEURONS-1];
     logic signed [15:0] l2_bias_in;
 
+    // SIREN Network Raw Outputs
     logic               pixel_valid_out;
     logic signed [15:0] pixel_out;
 
+    // Sharpen Filter Outputs
+    logic               sharp_pixel_valid;
+    logic signed [15:0] sharp_pixel_out;
+    logic               sharp_frame_done;
+
+    // Memory Arrays (128 Neurons)
     logic signed [15:0] coords_mem [0:2047];
-    logic signed [15:0] l1_w_mem   [0:(NUM_NEURONS*2)-1];
-    logic signed [15:0] l1_b_mem   [0:NUM_NEURONS-1];
-    logic signed [15:0] l2_w_mem   [0:NUM_NEURONS-1];
+    logic signed [15:0] l1_w_mem   [0:(NUM_NEURONS*2)-1]; // 256 words
+    logic signed [15:0] l1_b_mem   [0:NUM_NEURONS-1];     // 128 words
+    logic signed [15:0] l2_w_mem   [0:NUM_NEURONS-1];     // 128 words
     logic signed [15:0] l2_b_mem   [0:0];
 
-    int out_file;
-    int pixels_received;
+    int raw_file;
+    int sharp_file;
+    int raw_pixels_received;
+    int sharp_pixels_received;
 
-    siren_network_nVIIV #(.NUM_NEURONS(NUM_NEURONS)) dut (
+    // -------------------------------------------------------------------------
+    // 1. SIREN INR Neural Engine (128 Neurons)
+    // -------------------------------------------------------------------------
+    siren_network_niiiviii #(.NUM_NEURONS(NUM_NEURONS)) dut (
         .clk             (clk),
         .rst_in          (rst_in),
         .valid_in        (valid_in),
@@ -43,38 +55,79 @@ module tb_image_recon128n;
         .pixel_out       (pixel_out)
     );
 
+    // -------------------------------------------------------------------------
+    // 2. Hardware Post-Processing Sharpening Filter
+    // -------------------------------------------------------------------------
+    siren_sharpen dut_sharpen (
+        .clk         (clk),
+        .rst_in      (rst_in),
+        .data_in     (pixel_out),
+        .valid_in    (pixel_valid_out),
+        .pixel_valid (sharp_pixel_valid),
+        .pixel_out   (sharp_pixel_out),
+        .frame_done  (sharp_frame_done)
+    );
+
+    // Clock Generator: 100 MHz (10 ns period)
     initial begin
         clk = 1'b0;
         forever #5 clk = ~clk;
     end
 
+    // Monitor: Record both Raw and Sharpened streams
     initial begin
-        pixels_received = 0;
-        out_file = $fopen("sim/out_pixels.hex", "w");
-        if (!out_file) begin
-            $display("[ERROR] Could not open sim/out_pixels.hex for writing!");
+        raw_pixels_received   = 0;
+        sharp_pixels_received = 0;
+
+        raw_file   = $fopen("sim/out_pixels_raw.hex", "w");
+        sharp_file = $fopen("sim/out_pixels_sharpened.hex", "w");
+
+        if (!raw_file || !sharp_file) begin
+            $display("[ERROR] Could not open output hex files for writing!");
             $finish;
         end
 
-        forever @(posedge clk) begin
-            if (pixel_valid_out) begin
-                $fdisplay(out_file, "%h", pixel_out);
-                pixels_received = pixels_received + 1;
-
-                if (pixels_received % 128 == 0) begin
-                    $display("[SIM INFO] Processed %0d / %0d pixels...", pixels_received, TOTAL_PIXELS);
-                end
-
-                if (pixels_received == TOTAL_PIXELS) begin
-                    $display("[SUCCESS] All %0d pixels processed and captured.", TOTAL_PIXELS);
-                    $fclose(out_file);
-                    #20;
-                    $finish;
+        fork
+            // Collector 1: Raw SIREN stream
+            forever @(posedge clk) begin
+                if (pixel_valid_out) begin
+                    $fdisplay(raw_file, "%h", pixel_out);
+                    raw_pixels_received++;
+                    if (raw_pixels_received % 128 == 0) begin
+                        $display("[SIREN RAW] Processed %0d / %0d pixels...", raw_pixels_received, TOTAL_PIXELS);
+                    end
                 end
             end
-        end
+
+            // Collector 2: Sharpened output stream
+            forever @(posedge clk) begin
+                if (sharp_pixel_valid) begin
+                    $fdisplay(sharp_file, "%h", sharp_pixel_out);
+                    sharp_pixels_received++;
+                    if (sharp_pixels_received % 128 == 0) begin
+                        $display("[SHARPENED] Filtered %0d / %0d pixels...", sharp_pixels_received, TOTAL_PIXELS);
+                    end
+                end
+            end
+
+            // Drain completion
+            begin
+                @(posedge sharp_frame_done);
+                $display("\n=======================================================");
+                $display("[SUCCESS] 128-Neuron Full Pipeline Finished!");
+                $display("Raw Pixels Emitted       : %0d / %0d", raw_pixels_received, TOTAL_PIXELS);
+                $display("Sharpened Pixels Emitted : %0d / %0d", sharp_pixels_received, TOTAL_PIXELS);
+                $display("=======================================================\n");
+
+                $fclose(raw_file);
+                $fclose(sharp_file);
+                #100;
+                $finish;
+            end
+        join
     end
 
+    // Stimulus Process
     initial begin
         rst_in   = 1'b1; 
         valid_in = 1'b0;
@@ -86,8 +139,9 @@ module tb_image_recon128n;
         $readmemh("sim/layer1_biases.hex",  l1_b_mem);
         $readmemh("sim/layer2_weights.hex", l2_w_mem);
         $readmemh("sim/layer2_bias.hex",    l2_b_mem);
-        $display("[TB CHECK] NUM_NEURONS = %0d | L1 Weight 0: %h | L1 Weight 127: %h", 
-         NUM_NEURONS, l1_w_mem[0], l1_w_mem[127]);
+
+        $display("[TB CHECK] NUM_NEURONS = %0d | L1 Weight 0: %h | L1 Weight 255: %h", 
+                 NUM_NEURONS, l1_w_mem[0], l1_w_mem[255]);
 
         for (int i = 0; i < NUM_NEURONS; i++) begin
             l1_bias_in[i] = l1_b_mem[i];
@@ -104,6 +158,7 @@ module tb_image_recon128n;
         $display("[SIM START] Streaming %0d coordinate pairs into %0d-neuron SIREN...", TOTAL_PIXELS, NUM_NEURONS);
 
         for (int p = 0; p < TOTAL_PIXELS; p++) begin
+            // Coordinate X
             @(posedge clk);
             valid_in <= 1'b1;
             clr_acc  <= 1'b1; 
@@ -112,6 +167,7 @@ module tb_image_recon128n;
                 l1_w_in[n] <= l1_w_mem[2*n];     
             end
 
+            // Coordinate Y
             @(posedge clk);
             valid_in <= 1'b1;
             clr_acc  <= 1'b0; 
@@ -119,17 +175,15 @@ module tb_image_recon128n;
             for (int n = 0; n < NUM_NEURONS; n++) begin
                 l1_w_in[n] <= l1_w_mem[2*n + 1]; 
             end
+
+            // Wait for evaluation
+            @(posedge clk);
+            valid_in <= 1'b0;
+            clr_acc  <= 1'b0;
+            a_in     <= 16'sh0;
+
+            @(posedge pixel_valid_out);
         end
-
-        @(posedge clk);
-        valid_in <= 1'b0;
-        clr_acc  <= 1'b0;
-        a_in     <= 16'sh0;
-
-        #10000;
-        $display("[TIMEOUT] Simulation finished before receiving all pixels.");
-        $fclose(out_file);
-        $finish;
     end
 
 endmodule

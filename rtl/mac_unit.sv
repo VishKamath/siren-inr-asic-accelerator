@@ -39,7 +39,7 @@ module mac_unit (
             acc_out   <= 16'sh0;
             ovf_flag  <= 1'b0;
         end else begin
-            valid_out <= valid_in;
+            valid_out <= valid_in && !clr_acc;
 
             if (valid_in) begin
                 if (sum_stage > 33'sd32767) begin
