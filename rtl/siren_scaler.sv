@@ -20,7 +20,7 @@ module siren_scaler (
 
     always_comb begin
         ext_data     = 32'(signed'(data_in));
-        scaled_angle = ext_data * 32'sd30;
+        scaled_angle = ext_data * 32'sd45;
         
         // Modulo 2*pi
         mod_angle = scaled_angle % CONST_2PI;

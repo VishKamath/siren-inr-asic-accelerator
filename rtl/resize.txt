@@ -1,0 +1,17 @@
+import numpy as np
+from PIL import Image, ImageOps
+
+# Load current knight
+img = Image.open("target_photo.png").convert("L").resize((32, 32))
+arr = np.array(img)
+
+# Threshold to binary
+binary = arr < 128
+
+# Flood fill outer background to make solid black silhouette
+from scipy.ndimage import binary_fill_holes
+solid_mask = binary_fill_holes(binary)
+
+solid_img = np.where(solid_mask, 25, 235).astype(np.uint8)
+Image.fromarray(solid_img).save("target_photo.png")
+print("[SUCCESS] Converted wireframe to high-contrast solid silhouette!")

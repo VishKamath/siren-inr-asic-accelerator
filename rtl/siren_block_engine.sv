@@ -155,11 +155,13 @@ module siren_block_engine
 
   assign tile_valid_out = neuron_valid_lanes[0];
 
-  // Dynamically select W2 using pass_retire_cnt
+  // Dynamically select W2 using temporary integer to prevent Icarus warning
+  int retire_idx;
   always_comb begin
-    if (pass_retire_cnt < NUM_PASSES) begin
+    retire_idx = pass_retire_cnt;
+    if (retire_idx < NUM_PASSES) begin
       for (int l = 0; l < BLOCK_SIZE; l++) begin
-        w2_current[l] = w2_pass_reg[pass_retire_cnt[PASS_WIDTH-1:0]][l];
+        w2_current[l] = w2_pass_reg[retire_idx][l];
       end
     end else begin
       for (int l = 0; l < BLOCK_SIZE; l++) begin
@@ -216,7 +218,7 @@ module siren_block_engine
 
   always_comb begin 
     state_d = state_q;
-    case (state_q) 	
+    case (state_q)  
       ST_IDLE: begin 
         if (start_eval) state_d = ST_FEED;
       end
@@ -229,7 +231,7 @@ module siren_block_engine
         if (pass_retire_cnt == NUM_PASSES) begin 
           state_d = ST_FINALIZE;
         end
-      end	
+      end 
       ST_FINALIZE: begin 
         state_d = ST_IDLE;
       end
@@ -260,7 +262,7 @@ module siren_block_engine
         acc_reg         <= '0;
       end else if (state_q == ST_DRAIN) begin
         if (!drain_started) begin
-          if (tile_valid_out && (neuron_act_out[0] != 16'sh0001)) begin
+          if (tile_valid_out) begin
             drain_started   <= 1'b1;
             pass_retire_cnt <= 'd1;
             acc_reg         <= 40'($signed(block_sum_q12));
@@ -279,9 +281,9 @@ module siren_block_engine
     if (final_sum > 40'sd32767) begin
       pixel_out = 16'sh7FFF;
     end else if (final_sum < -40'sd32768) begin 
-      pixel_out = 16'sh8000;	
+      pixel_out = 16'sh8000;  
     end else begin 
-      pixel_out = 16'(final_sum);	
+      pixel_out = 16'(final_sum);  
     end
   end
 

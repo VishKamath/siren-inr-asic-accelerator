@@ -1,239 +1,178 @@
 import argparse
 import os
-import numpy as np
-from PIL import Image
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import numpy as np
+from PIL import Image
 
-# ==============================================================================
-# Hardware Precision (Signed Q4.12)
-# ==============================================================================
-def float_to_q4_12_hex(val):
-    scaled = int(np.round(val * 4096.0))
-    clamped = max(-32768, min(32767, scaled))
-    raw = clamped & 0xFFFF
-    return f"{raw:04x}"
-
-def quant_q4_12_val(x):
-    scale = 4096.0
-    return torch.clamp(torch.round(x * scale) / scale, -8.0, 32767.0 / scale)
-
-class Q4_12_STE(torch.autograd.Function):
+# -------------------------------------------------------------------------
+# Q4.12 Fixed-Point Straight-Through Estimator (STE)
+# -------------------------------------------------------------------------
+class QuantizeQ4_12STE(torch.autograd.Function):
+    """
+    Quantizes tensor to Q4.12 signed fixed point [-8.0, 7.99975].
+    Forward pass: quantizes values to discrete 1/4096 steps.
+    Backward pass: passes gradient straight through (STE).
+    """
     @staticmethod
     def forward(ctx, x):
-        return quant_q4_12_val(x)
+        scale = 4096.0
+        # Quantize and clamp to signed 16-bit range [-32768, 32767]
+        q = torch.clamp(torch.round(x * scale), -32768.0, 32767.0) / scale
+        return q
 
     @staticmethod
     def backward(ctx, grad_output):
         return grad_output
 
-def ste_quant(x):
-    return Q4_12_STE.apply(x)
 
-# ==============================================================================
-# 8-Neighbor Isotropic Sharpening Filter: 7C - 1.0*Card - 0.5*Diag
-# ==============================================================================
-class HardwareSharpen2D(nn.Module):
-    def __init__(self):
+def quant_q4_12(x):
+    return QuantizeQ4_12STE.apply(x)
+
+
+def float_to_q4_12_hex(val):
+    q_val = int(np.round(float(val) * 4096.0))
+    q_val = max(-32768, min(32767, q_val))
+    return f"{(q_val & 0xFFFF):04X}"
+
+
+def total_variation_loss(pred_2d):
+    diff_y = torch.abs(pred_2d[:, :, 1:, :] - pred_2d[:, :, :-1, :]).mean()
+    diff_x = torch.abs(pred_2d[:, :, :, 1:] - pred_2d[:, :, :, :-1]).mean()
+    return diff_y + diff_x
+
+
+# -------------------------------------------------------------------------
+# QAT-Enabled SIREN
+# -------------------------------------------------------------------------
+class QATSineLayer(nn.Module):
+    def __init__(self, in_features, out_features, bias=True, is_first=False, omega_0=45.0):
         super().__init__()
-        kernel = torch.tensor([[-0.5, -1.0, -0.5],
-                               [-1.0,  7.0, -1.0],
-                               [-0.5, -1.0, -0.5]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-        self.register_buffer("kernel", kernel)
-
-    def forward(self, img_2d, quantize=False):
-        padded = F.pad(img_2d, (1, 1, 1, 1), mode="replicate")
-        filtered = F.conv2d(padded, self.kernel)
-        if quantize:
-            filtered = ste_quant(filtered)
-        return torch.clamp(filtered, 0.0, 1.0)
-
-# ==============================================================================
-# SIREN Network Architecture
-# ==============================================================================
-class SirenLayer(nn.Module):
-    def __init__(self, in_features, out_features, w0=30.0, is_first=False):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.w0 = w0
+        self.omega_0 = omega_0
         self.is_first = is_first
-        self.linear = nn.Linear(in_features, out_features)
+        self.in_features = in_features
+        self.linear = nn.Linear(in_features, out_features, bias=bias)
         self.init_weights()
 
     def init_weights(self):
         with torch.no_grad():
             if self.is_first:
-                # 75% standard low/mid frequencies (bound = 0.5), 25% higher octave (bound = 1.0)
-                n_base = int(self.out_features * 0.75)
-                n_high = self.out_features - n_base
-                
-                w_base = torch.empty(n_base, self.in_features).uniform_(-0.5, 0.5)
-                w_high = torch.empty(n_high, self.in_features).uniform_(-1.0, 1.0)
-                self.linear.weight.copy_(torch.cat([w_base, w_high], dim=0))
-                self.linear.bias.uniform_(-np.pi / self.w0, np.pi / self.w0)
+                self.linear.weight.uniform_(-1.0 / self.in_features, 1.0 / self.in_features)
             else:
-                bound = np.sqrt(6.0 / self.in_features) / self.w0
+                bound = np.sqrt(6.0 / self.in_features) / self.omega_0
                 self.linear.weight.uniform_(-bound, bound)
-                self.linear.bias.uniform_(-np.pi / self.w0, np.pi / self.w0)
 
-    def forward(self, x, quantize=False):
-        if quantize:
-            w = ste_quant(self.linear.weight)
-            b = ste_quant(self.linear.bias)
-            x_in = ste_quant(x)
-            
-            affine = F.linear(x_in, w, b)
-            affine_q = ste_quant(affine)
-            
-            raw_angle = self.w0 * affine_q
-            wrapped_angle = torch.remainder(raw_angle + np.pi, 2.0 * np.pi) - np.pi
-            out = torch.sin(wrapped_angle)
-            return ste_quant(out)
-        else:
-            return torch.sin(self.w0 * self.linear(x))
+    def forward(self, input):
+        # Quantize weights and biases to match RTL coefficient memory
+        q_w = quant_q4_12(self.linear.weight)
+        q_b = quant_q4_12(self.linear.bias)
+        # Affine pass emulating RTL MAC accumulation
+        affine = torch.matmul(input, q_w.t()) + q_b
+        q_affine = quant_q4_12(affine)
+        # Activation using omega_0 matching siren_scaler.sv
+        return torch.sin(self.omega_0 * q_affine)
 
-class SirenINR(nn.Module):
-    def __init__(self, num_neurons=64, w0=30.0):
+
+class QATSiren(nn.Module):
+    def __init__(self, in_features=2, hidden_features=64, out_features=1, omega_0=45.0):
         super().__init__()
-        self.num_neurons = num_neurons
-        self.l1 = SirenLayer(2, num_neurons, w0=w0, is_first=True)
-        self.l2 = nn.Linear(num_neurons, 1)
-        self.sharpen = HardwareSharpen2D()
-
+        self.l1 = QATSineLayer(in_features, hidden_features, is_first=True, omega_0=omega_0)
+        self.l2 = nn.Linear(hidden_features, out_features)
         with torch.no_grad():
-            bound = np.sqrt(6.0 / num_neurons)
+            bound = np.sqrt(6.0 / hidden_features)
             self.l2.weight.uniform_(-bound, bound)
             self.l2.bias.zero_()
 
-    def forward(self, coords, quantize=False):
-        h = self.l1(coords, quantize=quantize)
-        if quantize:
-            w2 = ste_quant(self.l2.weight)
-            b2 = ste_quant(self.l2.bias)
-            prod = ste_quant(h * w2)
-            accum = torch.sum(prod, dim=-1, keepdim=True) + b2
-            raw = ste_quant(accum)
-        else:
-            raw = self.l2(h)
+    def forward(self, coords):
+        act = self.l1(coords)
+        q_act = quant_q4_12(act)
+        q_w2 = quant_q4_12(self.l2.weight)
+        q_b2 = quant_q4_12(self.l2.bias)
+        out = torch.matmul(q_act, q_w2.t()) + q_b2
+        return quant_q4_12(out)
 
-        raw_2d = raw.view(1, 1, 32, 32)
-        sharp_2d = self.sharpen(raw_2d, quantize=quantize)
-        return raw, sharp_2d.view(-1, 1)
 
-def get_target_image(grid_size=32):
-    if os.path.exists("target_photo.png"):
-        resample_filter = getattr(getattr(Image, "Resampling", Image), "LANCZOS", Image.BILINEAR)
-        img = Image.open("target_photo.png").convert("L").resize((grid_size, grid_size), resample_filter)
-        target = np.array(img, dtype=np.float32) / 255.0
-    else:
-        y = np.linspace(-1.0, 1.0, grid_size)
-        x = np.linspace(-1.0, 1.0, grid_size)
-        xx, yy = np.meshgrid(x, y)
-        target = 0.5 * (np.sin(3.0 * np.pi * xx) * np.cos(3.0 * np.pi * yy) + 1.0)
-    return target
-
+# -------------------------------------------------------------------------
+# Training Pipeline
+# -------------------------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--neurons", type=int, default=64)
-    parser.add_argument("--w0", type=float, default=30.0)
+    parser = argparse.ArgumentParser(description="QAT Training for SIREN Accelerator")
+    parser.add_argument("--image", type=str, default="cameraman", help="Image name stem in test_images/")
+    parser.add_argument("--neurons", type=int, default=64, help="Neurons in hidden layer")
+    parser.add_argument("--w0", type=float, default=45.0, help="Omega_0 frequency factor")
+    parser.add_argument("--epochs", type=int, default=3500, help="Epoch count")
+    parser.add_argument("--lr", type=float, default=1.5e-3, help="Peak learning rate")
+    parser.add_argument("--tv_w", type=float, default=0.008, help="TV weight for background smoothing")
     args = parser.parse_args()
 
     os.makedirs("sim", exist_ok=True)
-    os.makedirs("doc", exist_ok=True)
-
     grid_size = 32
-    target = get_target_image(grid_size)
-    np.save("doc/target_ground_truth.npy", target)
 
-    y = np.linspace(-1.0, 1.0, grid_size)
-    x = np.linspace(-1.0, 1.0, grid_size)
+    candidates = [
+        os.path.join("test_images", f"{args.image}_32x32.png"),
+        os.path.join("test_images", f"{args.image}.png"),
+        os.path.join("test_images", f"{args.image}.jpg"),
+        os.path.join("test_images", args.image)
+    ]
+    selected_path = next((p for p in candidates if os.path.isfile(p)), None)
+    if not selected_path:
+        raise FileNotFoundError(f"Could not find '{args.image}' inside test_images/")
 
-    coords_list, targets_list = [], []
-    for r in range(grid_size):
-        for c in range(grid_size):
-            coords_list.append([x[c], y[r]])
-            targets_list.append([target[r, c]])
+    print(f"[LOAD] Loading target: {selected_path}")
+    resample_filter = Image.Resampling.BILINEAR if hasattr(Image, "Resampling") else Image.BILINEAR
+    img = Image.open(selected_path).convert("L").resize((grid_size, grid_size), resample_filter)
+    img.save("target_photo.png")
 
-    coords_t = torch.tensor(coords_list, dtype=torch.float32)
-    targets_t = torch.tensor(targets_list, dtype=torch.float32)
+    target_np = np.array(img, dtype=np.float32) / 255.0
+    target_tensor = torch.tensor(target_np).view(-1, 1)
 
-    target_2d = targets_t.view(1, 1, 32, 32)
-    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).view(1, 1, 3, 3)
-    sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).view(1, 1, 3, 3)
-    gt_grad_x = F.conv2d(F.pad(target_2d, (1, 1, 1, 1), mode="replicate"), sobel_x)
-    gt_grad_y = F.conv2d(F.pad(target_2d, (1, 1, 1, 1), mode="replicate"), sobel_y)
+    coords_y = np.linspace(-1.0, 1.0, grid_size, dtype=np.float32)
+    coords_x = np.linspace(-1.0, 1.0, grid_size, dtype=np.float32)
+    mesh_y, mesh_x = np.meshgrid(coords_y, coords_x, indexing='ij')
+    coords_np = np.stack([mesh_x.flatten(), mesh_y.flatten()], axis=-1)
+    # Quantize coordinates as they enter RTL inputs
+    coords_tensor = quant_q4_12(torch.tensor(coords_np))
 
-    torch.manual_seed(42)
-    np.random.seed(42)
-    model = SirenINR(num_neurons=args.neurons, w0=args.w0)
-
-    epochs_float = 5000
-    epochs_qat   = 2500
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=2e-3)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs_float, eta_min=1e-5)
-
-    print(f"[STAGE 1] Float Pre-training ({epochs_float} epochs)...")
-    for epoch in range(epochs_float):
-        optimizer.zero_grad()
-        raw, sharp = model(coords_t, quantize=False)
-        
-        mse_raw = F.mse_loss(raw, targets_t)
-        mse_shp = F.mse_loss(sharp, targets_t)
-        
-        # Anneal edge supervision smoothly
-        edge_weight = min(0.08, 0.01 + 0.07 * (epoch / epochs_float))
-        sharp_2d = sharp.view(1, 1, 32, 32)
-        pred_gx = F.conv2d(F.pad(sharp_2d, (1, 1, 1, 1), mode="replicate"), sobel_x)
-        pred_gy = F.conv2d(F.pad(sharp_2d, (1, 1, 1, 1), mode="replicate"), sobel_y)
-        edge_loss = F.l1_loss(pred_gx, gt_grad_x) + F.l1_loss(pred_gy, gt_grad_y)
-        
-        loss = 0.55 * mse_raw + 0.45 * mse_shp + edge_weight * edge_loss
-        loss.backward()
-        optimizer.step()
-        scheduler.step()
-
-        if (epoch + 1) % 1000 == 0:
-            psnr_shp = 10.0 * np.log10(1.0 / (F.mse_loss(sharp, targets_t).item() + 1e-12))
-            psnr_raw = 10.0 * np.log10(1.0 / (F.mse_loss(raw, targets_t).item() + 1e-12))
-            print(f"  Epoch {epoch+1:5d} | Raw: {psnr_raw:.2f} dB | Sharpened: {psnr_shp:.2f} dB")
-
-    print(f"[STAGE 2] Hardware QAT Fine-Tuning ({epochs_qat} epochs)...")
-    optimizer_qat = torch.optim.Adam(model.parameters(), lr=3e-4)
-    scheduler_qat = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_qat, T_max=epochs_qat, eta_min=1e-6)
-
-    for epoch in range(epochs_qat):
-        optimizer_qat.zero_grad()
-        raw, sharp = model(coords_t, quantize=True)
-        
-        mse_raw = F.mse_loss(raw, targets_t)
-        mse_shp = F.mse_loss(sharp, targets_t)
-        
-        sharp_2d = sharp.view(1, 1, 32, 32)
-        pred_gx = F.conv2d(F.pad(sharp_2d, (1, 1, 1, 1), mode="replicate"), sobel_x)
-        pred_gy = F.conv2d(F.pad(sharp_2d, (1, 1, 1, 1), mode="replicate"), sobel_y)
-        edge_loss = F.l1_loss(pred_gx, gt_grad_x) + F.l1_loss(pred_gy, gt_grad_y)
-        
-        loss = 0.55 * mse_raw + 0.45 * mse_shp + 0.08 * edge_loss
-        loss.backward()
-        optimizer_qat.step()
-        scheduler_qat.step()
-
-        if (epoch + 1) % 500 == 0:
-            psnr_shp = 10.0 * np.log10(1.0 / (F.mse_loss(sharp, targets_t).item() + 1e-12))
-            psnr_raw = 10.0 * np.log10(1.0 / (F.mse_loss(raw, targets_t).item() + 1e-12))
-            print(f"  QAT Epoch {epoch+1:5d} | Raw: {psnr_raw:.2f} dB | Sharpened: {psnr_shp:.2f} dB")
-
-    # Export parameter hex files
     with open("sim/coords.hex", "w") as f:
-        for pt in coords_list:
+        for pt in coords_np:
             f.write(f"{float_to_q4_12_hex(pt[0])}\n")
             f.write(f"{float_to_q4_12_hex(pt[1])}\n")
 
-    w1 = model.l1.linear.weight.detach().numpy()
-    b1 = model.l1.linear.bias.detach().numpy()
+    model = QATSiren(in_features=2, hidden_features=args.neurons, omega_0=args.w0)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=1e-5)
+    loss_mse_fn = nn.MSELoss()
+
+    print(f"[TRAIN] Running QAT for {args.epochs} epochs...")
+    for epoch in range(1, args.epochs + 1):
+        optimizer.zero_grad()
+        pred = model(coords_tensor)
+        pred_2d = pred.view(1, 1, grid_size, grid_size)
+
+        loss_mse = loss_mse_fn(pred, target_tensor)
+        loss_tv = total_variation_loss(pred_2d)
+        total_loss = loss_mse + (args.tv_w * loss_tv)
+
+        total_loss.backward()
+        optimizer.step()
+        scheduler.step()
+
+        if epoch % 500 == 0 or epoch == args.epochs:
+            mse_val = loss_mse.item()
+            psnr = 10.0 * np.log10(1.0 / (mse_val + 1e-10))
+            print(f"[Epoch {epoch:4d}/{args.epochs}] Loss: {total_loss.item():.5f} | TV: {loss_tv.item():.5f} | QAT PSNR: {psnr:.2f} dB")
+
+    # Export strictly quantized weights
+    with torch.no_grad():
+        w1 = quant_q4_12(model.l1.linear.weight).cpu().numpy()
+        b1 = quant_q4_12(model.l1.linear.bias).cpu().numpy()
+        w2 = quant_q4_12(model.l2.weight).cpu().numpy()[0]
+        b2 = quant_q4_12(model.l2.bias).cpu().numpy()[0]
+
+    with open("sim/layer1_weights_x.hex", "w") as fx, open("sim/layer1_weights_y.hex", "w") as fy:
+        for n in range(args.neurons):
+            fx.write(f"{float_to_q4_12_hex(w1[n, 0])}\n")
+            fy.write(f"{float_to_q4_12_hex(w1[n, 1])}\n")
 
     with open("sim/layer1_weights.hex", "w") as f:
         for n in range(args.neurons):
@@ -244,9 +183,6 @@ def main():
         for n in range(args.neurons):
             f.write(f"{float_to_q4_12_hex(b1[n])}\n")
 
-    w2 = model.l2.weight.detach().numpy().flatten()
-    b2 = model.l2.bias.detach().numpy().flatten()[0]
-
     with open("sim/layer2_weights.hex", "w") as f:
         for n in range(args.neurons):
             f.write(f"{float_to_q4_12_hex(w2[n])}\n")
@@ -254,7 +190,8 @@ def main():
     with open("sim/layer2_bias.hex", "w") as f:
         f.write(f"{float_to_q4_12_hex(b2)}\n")
 
-    print("[SUCCESS] Exported stable calibrated parameters to sim/")
+    print("[SUCCESS] Quantization-aware hex files generated successfully.")
+
 
 if __name__ == "__main__":
     main()
