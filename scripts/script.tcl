@@ -1,44 +1,56 @@
-# Step 1: Set Search Paths and Target Libraries
-set_db init_lib_search_path {/home/install/FOUNDRY/digital/45nm/dig/lib}
-set_db init_hdl_search_path {../rtl}
+# =========================================================================
+# Cadence Genus Synthesis Script - Full INR Block Engine
+# =========================================================================
+
+# Step 1: Set Search Paths and Target Libraries (using 90nm / 45nm)
+set_db init_lib_search_path {/home/install/FOUNDRY/digital/90nm/dig/lib}
+set_db init_hdl_search_path {rtl .}
+set_db max_cpus_per_server 8
 
 read_libs slow.lib
 
-# Step 2: Read Design Files (Package MUST be read first)
+# Step 2: Read Design Files in order
 read_hdl -language sv {
-    inr_pkg.sv
-    cordic_stage.sv
-    cordic_wrapper.sv
-    phase_folder.sv
-    siren_act_unit.sv
-    mac_unit.sv
-    siren_neuron.sv
+    rtl/inr_pkg.sv
+    rtl/cordic_stage.sv
+    rtl/cordic_wrapper.sv
+    rtl/phase_folder.sv
+    rtl/siren_scaler.sv
+    rtl/siren_act_unit.sv
+    rtl/mac_unit.sv
+    rtl/siren_neuron.sv
+    rtl/siren_block_engine.sv
+    rtl/siren_sharpen.sv
+    rtl/siren_clamp.sv
 }
 
 # Step 3: Elaborate Top-Level Module
-elaborate siren_neuron
+set TOP_MODULE siren_block_engine
+elaborate $TOP_MODULE
 
-# Verify design hierarchy after elaboration
 check_design -unresolved
 
-# Step 4: Load Timing Constraints (SDC)
-read_sdc ../scripts/constraints.sdc
+# Step 4: Load Timing Constraints
+read_sdc scripts/constraints.sdc
 
-# Step 5: Synthesize to Generic Gates, Map to Technology, and Optimize
+# Step 5: Synthesize and Optimize
 syn_generic
 syn_map
 syn_opt
 
-# Step 6: Generate Reports
-file mkdir ../reports
-report_timing > ../reports/timing_report.rpt
-report_area > ../reports/area_report.rpt
-report_power > ../reports/power_report.rpt
-report_qor > ../reports/qor_report.rpt
+# Step 6: Generate Complete Reports
+file mkdir reports
+report_timing > reports/timing_report.rpt
+report_area   > reports/area_report.rpt
+report_gates  > reports/gates_report.rpt
+report_power  > reports/power_report.rpt
+report_qor    > reports/qor_report.rpt
 
-# Step 7: Export Netlist for Place & Route (Innovus)
-file mkdir ../outputs
-write_hdl > ../outputs/neuron_netlist.v
-write_sdc > ../outputs/neuron_out.sdc
+# Step 7: Export Netlist & SDC for Innovus
+file mkdir outputs
+write_hdl > outputs/inr_accelerator_netlist.v
+write_sdc > outputs/inr_accelerator_out.sdc
 
-gui_show
+puts "\n=============================================="
+puts "  GENUS SYNTHESIS COMPLETED SUCCESSFULLY      "
+puts "==============================================\n"
