@@ -1,0 +1,69 @@
+xrun(64): 22.09-s003: (c) Copyright 1995-2022 Cadence Design Systems, Inc.
+TOOL:	xrun(64)	22.09-s003: Started on Oct 12, 2026 at 10:05:40 IST
+xrun
+	-sv
+	-64bit
+	-access +rwc
+	-timescale 1ns/1ps
+	rtl/inr_pkg.sv
+	rtl/mac_unit.sv
+	rtl/phase_folder.sv
+	rtl/cordic_stage.sv
+	rtl/cordic_wrapper.sv
+	rtl/siren_scaler.sv
+	rtl/siren_act_unit.sv
+	rtl/siren_neuron.sv
+	rtl/siren_block_engine.sv
+	rtl/siren_sharpen.sv
+	rtl/siren_clamp.sv
+	rtl/tb_siren_block_engine.sv
+Recompiling... reason: file './rtl/siren_sharpen.sv' is newer than expected.
+	expected: Mon Oct 12 09:58:27 2026
+	actual:   Mon Oct 12 10:05:23 2026
+file: rtl/siren_sharpen.sv
+	module worklib.siren_sharpen:sv
+		errors: 0, warnings: 0
+		Caching library 'worklib' ....... Done
+	Elaborating the design hierarchy:
+	Top level design units:
+		inr_pkg
+		$unit_0x69037112
+		tb_siren_block_engine
+mac_unit mac (.clk(clk),.rst_in(rst_in),.valid_in(valid_in),.a_in(a_in),.w_in(w_in),.bias_in(bias_in),.clr_acc(clr_acc),.valid_out(wire_mac),.acc_out(mac_result));
+           |
+xmelab: *W,CUVWSP (./rtl/siren_neuron.sv,20|11): 1 output port was not connected:
+xmelab: (./rtl/mac_unit.sv,13): ovf_flag
+
+xmelab: *W,DSEMEL: This SystemVerilog design will be simulated as per IEEE 1800-2009 SystemVerilog simulation semantics. Use -disable_sem2009 option for turning off SV 2009 simulation semantics.
+	Building instance overlay tables: .................... Done
+	Generating native compiled code:
+		worklib.siren_sharpen:sv <0x18cf379c>
+			streams:  35, words: 16234
+	Building instance specific data structures.
+	Loading native compiled code:     .................... Done
+	Design hierarchy summary:
+		                 Instances  Unique
+		Modules:                92      11
+		Verilog packages:        1       1
+		Registers:             849     171
+		Scalar wires:          293       -
+		Vectored wires:        699       -
+		Always blocks:         171      27
+		Initial blocks:          4       4
+		Cont. assignments:      31      11
+		Pseudo assignments:    627      54
+		Compilation units:       1       1
+		Simulation timescale:  1ps
+	Writing initial simulation snapshot: worklib.tb_siren_block_engine:sv
+Loading snapshot worklib.tb_siren_block_engine:sv .................... Done
+xmsim: *W,DSEM2009: This SystemVerilog design is simulated as per IEEE 1800-2009 SystemVerilog simulation semantics. Use -disable_sem2009 option for turning off SV 2009 simulation semantics.
+xcelium> source /home/install/XCELIUM2209/tools/xcelium/files/xmsimrc
+xcelium> run
+[TB] Starting 32x32 Raster Scan through siren_block_engine...
+[TB] 1024 coordinates injected. Flushing pipeline...
+[TB] Final Capture Summary -> Raw: 1024 | Sharpened: 1024 | Clamped: 1024
+[TB] Simulation completed successfully.
+Simulation complete via $finish(1) at time 827850 NS + 0
+./rtl/tb_siren_block_engine.sv:185     $finish;
+xcelium> exit
+TOOL:	xrun(64)	22.09-s003: Exiting on Oct 12, 2026 at 10:05:50 IST  (total: 00:00:10)

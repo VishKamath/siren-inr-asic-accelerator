@@ -1,0 +1,266 @@
+********************************************************************************
+Product   : Virtuoso(R) XStream In
+Program   : @(#)$CDS: strmin version 6.1.8-64b 11/15/2022 19:26 (cpgbld01) $
+          : sub-version  IC6.1.8-64b.500.29 
+Started at: 13-Oct-2026  17:51:15
+User Name : vlsi14
+Host Name : cad312vitcc.vit.ac.in
+Directory : /home/vlsi14/24BVD1042/update_INR_ACCELERATOR
+CADENCE Design Systems, Inc.
+********************************************************************************
+Info: Cellview Rev Num:99,  Tech Rev Num:59
+
+WARNING (XSTRM-75): Target library 'siren_signoff' is attached to the technology library 'gpdk090'. Therefore, the technology file is opened in read-only mode. All the undefined layer-purpose pairs will be dropped.
+WARNING (XSTRM-107): Existing cells in the target library will be overwritten if the cell names in the Stream file and the target library are the same. To prevent this, set the '-writeMode' option to 'noOverwrite'.
+INFO (XSTRM-217): Reading the layer map file, /home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap
+WARNING (XSTRM-31): Layer map file '/home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap' contains a duplicate entry for Stream layer-datatype '7:1' at line '61'. Therefore, this entry will be ignored during translation.
+WARNING (XSTRM-31): Layer map file '/home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap' contains a duplicate entry for Stream layer-datatype '9:1' at line '62'. Therefore, this entry will be ignored during translation.
+WARNING (XSTRM-31): Layer map file '/home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap' contains a duplicate entry for Stream layer-datatype '11:1' at line '63'. Therefore, this entry will be ignored during translation.
+WARNING (XSTRM-31): Layer map file '/home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap' contains a duplicate entry for Stream layer-datatype '31:1' at line '64'. Therefore, this entry will be ignored during translation.
+WARNING (XSTRM-31): Layer map file '/home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap' contains a duplicate entry for Stream layer-datatype '33:1' at line '65'. Therefore, this entry will be ignored during translation.
+WARNING (XSTRM-31): Layer map file '/home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap' contains a duplicate entry for Stream layer-datatype '35:1' at line '66'. Therefore, this entry will be ignored during translation.
+WARNING (XSTRM-31): Layer map file '/home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap' contains a duplicate entry for Stream layer-datatype '38:1' at line '67'. Therefore, this entry will be ignored during translation.
+WARNING (XSTRM-31): Layer map file '/home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap' contains a duplicate entry for Stream layer-datatype '40:1' at line '68'. Therefore, this entry will be ignored during translation.
+WARNING (XSTRM-31): Layer map file '/home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap' contains a duplicate entry for Stream layer-datatype '42:1' at line '69'. Therefore, this entry will be ignored during translation.
+INFO (XSTRM-163): You have not used the '-viaMap' option. If a viaMap file, corresponding technology file or technology library exist, then use the '-viaMap' option for creating oaVia instances in the Streamed-In library. Using the '-viaMap' option improves performance and VM usage of applications using the Streamed-In design.
+
+Summary of Options:
+	library				siren_signoff
+	strmFile			/home/vlsi14/24BVD1042/update_INR_ACCELERATOR/outputs/siren_block_engine.gds
+	logFile				strmIn.log
+	topCell				siren_block_engine
+	view				layout
+	case				Preserve
+	layerMap			/home/install/FOUNDRY/analog/90nm/libs.oa22/gpdk090/gpdk090.layermap
+	propSeparator			,
+
+INFO (XSTRM-220): 1. Translating STRUCTURE DLY1X1 as cellView siren_signoff/DLY1X1/layout.
+INFO (XSTRM-220): 2. Translating STRUCTURE CLKBUFX3 as cellView siren_signoff/CLKBUFX3/layout.
+INFO (XSTRM-220): 3. Translating STRUCTURE CLKBUFX2 as cellView siren_signoff/CLKBUFX2/layout.
+INFO (XSTRM-220): 4. Translating STRUCTURE CLKBUFX6 as cellView siren_signoff/CLKBUFX6/layout.
+INFO (XSTRM-220): 5. Translating STRUCTURE BUFX2 as cellView siren_signoff/BUFX2/layout.
+INFO (XSTRM-220): 6. Translating STRUCTURE DLY1X4 as cellView siren_signoff/DLY1X4/layout.
+INFO (XSTRM-220): 7. Translating STRUCTURE DLY2X1 as cellView siren_signoff/DLY2X1/layout.
+INFO (XSTRM-220): 8. Translating STRUCTURE DLY3X1 as cellView siren_signoff/DLY3X1/layout.
+INFO (XSTRM-220): 9. Translating STRUCTURE NAND2X2 as cellView siren_signoff/NAND2X2/layout.
+INFO (XSTRM-220): 10. Translating STRUCTURE CLKINVX1 as cellView siren_signoff/CLKINVX1/layout.
+INFO (XSTRM-220): 11. Translating STRUCTURE NAND4BBX1 as cellView siren_signoff/NAND4BBX1/layout.
+INFO (XSTRM-220): 12. Translating STRUCTURE AND2X1 as cellView siren_signoff/AND2X1/layout.
+INFO (XSTRM-220): 13. Translating STRUCTURE NAND3X1 as cellView siren_signoff/NAND3X1/layout.
+INFO (XSTRM-220): 14. Translating STRUCTURE CLKAND2X2 as cellView siren_signoff/CLKAND2X2/layout.
+INFO (XSTRM-220): 15. Translating STRUCTURE NAND3BX1 as cellView siren_signoff/NAND3BX1/layout.
+INFO (XSTRM-220): 16. Translating STRUCTURE AOI21X2 as cellView siren_signoff/AOI21X2/layout.
+INFO (XSTRM-220): 17. Translating STRUCTURE CLKMX2X3 as cellView siren_signoff/CLKMX2X3/layout.
+INFO (XSTRM-220): 18. Translating STRUCTURE OAI22X1 as cellView siren_signoff/OAI22X1/layout.
+INFO (XSTRM-220): 19. Translating STRUCTURE OAI21X2 as cellView siren_signoff/OAI21X2/layout.
+INFO (XSTRM-220): 20. Translating STRUCTURE NOR4BBX1 as cellView siren_signoff/NOR4BBX1/layout.
+INFO (XSTRM-220): 21. Translating STRUCTURE CLKBUFX4 as cellView siren_signoff/CLKBUFX4/layout.
+INFO (XSTRM-220): 22. Translating STRUCTURE XNOR2X1 as cellView siren_signoff/XNOR2X1/layout.
+INFO (XSTRM-220): 23. Translating STRUCTURE CLKINVX2 as cellView siren_signoff/CLKINVX2/layout.
+INFO (XSTRM-220): 24. Translating STRUCTURE BUFX3 as cellView siren_signoff/BUFX3/layout.
+INFO (XSTRM-220): 25. Translating STRUCTURE CLKINVX6 as cellView siren_signoff/CLKINVX6/layout.
+INFO (XSTRM-220): 26. Translating STRUCTURE CLKINVX3 as cellView siren_signoff/CLKINVX3/layout.
+INFO (XSTRM-220): 27. Translating STRUCTURE BUFX4 as cellView siren_signoff/BUFX4/layout.
+INFO (XSTRM-220): 28. Translating STRUCTURE INVXL as cellView siren_signoff/INVXL/layout.
+INFO (XSTRM-220): 29. Translating STRUCTURE NAND2X1 as cellView siren_signoff/NAND2X1/layout.
+INFO (XSTRM-220): 30. Translating STRUCTURE OAI2BB1X4 as cellView siren_signoff/OAI2BB1X4/layout.
+INFO (XSTRM-220): 31. Translating STRUCTURE AOI211X1 as cellView siren_signoff/AOI211X1/layout.
+INFO (XSTRM-220): 32. Translating STRUCTURE NAND2XL as cellView siren_signoff/NAND2XL/layout.
+INFO (XSTRM-220): 33. Translating STRUCTURE AOI21X1 as cellView siren_signoff/AOI21X1/layout.
+INFO (XSTRM-220): 34. Translating STRUCTURE NOR3BX2 as cellView siren_signoff/NOR3BX2/layout.
+INFO (XSTRM-220): 35. Translating STRUCTURE AOI222X1 as cellView siren_signoff/AOI222X1/layout.
+INFO (XSTRM-220): 36. Translating STRUCTURE AND4X1 as cellView siren_signoff/AND4X1/layout.
+INFO (XSTRM-220): 37. Translating STRUCTURE OR2X1 as cellView siren_signoff/OR2X1/layout.
+INFO (XSTRM-220): 38. Translating STRUCTURE NOR3X1 as cellView siren_signoff/NOR3X1/layout.
+INFO (XSTRM-220): 39. Translating STRUCTURE AOI222X2 as cellView siren_signoff/AOI222X2/layout.
+INFO (XSTRM-220): 40. Translating STRUCTURE OAI221X2 as cellView siren_signoff/OAI221X2/layout.
+INFO (XSTRM-220): 41. Translating STRUCTURE AOI21X4 as cellView siren_signoff/AOI21X4/layout.
+INFO (XSTRM-220): 42. Translating STRUCTURE AOI222XL as cellView siren_signoff/AOI222XL/layout.
+INFO (XSTRM-220): 43. Translating STRUCTURE OAI211X4 as cellView siren_signoff/OAI211X4/layout.
+INFO (XSTRM-220): 44. Translating STRUCTURE NOR3X2 as cellView siren_signoff/NOR3X2/layout.
+INFO (XSTRM-220): 45. Translating STRUCTURE NAND3X2 as cellView siren_signoff/NAND3X2/layout.
+INFO (XSTRM-220): 46. Translating STRUCTURE MXI2XL as cellView siren_signoff/MXI2XL/layout.
+INFO (XSTRM-220): 47. Translating STRUCTURE CLKINVX8 as cellView siren_signoff/CLKINVX8/layout.
+INFO (XSTRM-220): 48. Translating STRUCTURE CLKINVX4 as cellView siren_signoff/CLKINVX4/layout.
+INFO (XSTRM-220): 49. Translating STRUCTURE NOR2BX1 as cellView siren_signoff/NOR2BX1/layout.
+INFO (XSTRM-220): 50. Translating STRUCTURE NOR2BX2 as cellView siren_signoff/NOR2BX2/layout.
+INFO (XSTRM-220): 51. Translating STRUCTURE NAND2X4 as cellView siren_signoff/NAND2X4/layout.
+INFO (XSTRM-220): 52. Translating STRUCTURE OR2X2 as cellView siren_signoff/OR2X2/layout.
+INFO (XSTRM-220): 53. Translating STRUCTURE OA21X1 as cellView siren_signoff/OA21X1/layout.
+INFO (XSTRM-220): 54. Translating STRUCTURE MXI2X1 as cellView siren_signoff/MXI2X1/layout.
+INFO (XSTRM-220): 55. Translating STRUCTURE NAND4X1 as cellView siren_signoff/NAND4X1/layout.
+INFO (XSTRM-220): 56. Translating STRUCTURE BUFX6 as cellView siren_signoff/BUFX6/layout.
+INFO (XSTRM-220): 57. Translating STRUCTURE OAI21X4 as cellView siren_signoff/OAI21X4/layout.
+INFO (XSTRM-220): 58. Translating STRUCTURE NOR2BX4 as cellView siren_signoff/NOR2BX4/layout.
+INFO (XSTRM-220): 59. Translating STRUCTURE NOR2X2 as cellView siren_signoff/NOR2X2/layout.
+INFO (XSTRM-220): 60. Translating STRUCTURE OAI222X1 as cellView siren_signoff/OAI222X1/layout.
+INFO (XSTRM-220): 61. Translating STRUCTURE NAND2BX2 as cellView siren_signoff/NAND2BX2/layout.
+INFO (XSTRM-220): 62. Translating STRUCTURE OAI21X1 as cellView siren_signoff/OAI21X1/layout.
+INFO (XSTRM-220): 63. Translating STRUCTURE NAND2BX1 as cellView siren_signoff/NAND2BX1/layout.
+INFO (XSTRM-220): 64. Translating STRUCTURE OAI211X2 as cellView siren_signoff/OAI211X2/layout.
+INFO (XSTRM-220): 65. Translating STRUCTURE AOI2BB2X4 as cellView siren_signoff/AOI2BB2X4/layout.
+INFO (XSTRM-220): 66. Translating STRUCTURE NOR2XL as cellView siren_signoff/NOR2XL/layout.
+INFO (XSTRM-220): 67. Translating STRUCTURE NAND3BX2 as cellView siren_signoff/NAND3BX2/layout.
+INFO (XSTRM-220): 68. Translating STRUCTURE NOR4BBX2 as cellView siren_signoff/NOR4BBX2/layout.
+INFO (XSTRM-220): 69. Translating STRUCTURE CLKAND2X4 as cellView siren_signoff/CLKAND2X4/layout.
+INFO (XSTRM-220): 70. Translating STRUCTURE CLKAND2X3 as cellView siren_signoff/CLKAND2X3/layout.
+INFO (XSTRM-220): 71. Translating STRUCTURE OAI211X1 as cellView siren_signoff/OAI211X1/layout.
+INFO (XSTRM-220): 72. Translating STRUCTURE NOR2X1 as cellView siren_signoff/NOR2X1/layout.
+INFO (XSTRM-220): 73. Translating STRUCTURE NOR3BX1 as cellView siren_signoff/NOR3BX1/layout.
+INFO (XSTRM-220): 74. Translating STRUCTURE AOI22X2 as cellView siren_signoff/AOI22X2/layout.
+INFO (XSTRM-220): 75. Translating STRUCTURE ACHCONX2 as cellView siren_signoff/ACHCONX2/layout.
+INFO (XSTRM-220): 76. Translating STRUCTURE XOR3X1 as cellView siren_signoff/XOR3X1/layout.
+INFO (XSTRM-220): 77. Translating STRUCTURE INVX1 as cellView siren_signoff/INVX1/layout.
+INFO (XSTRM-220): 78. Translating STRUCTURE INVX2 as cellView siren_signoff/INVX2/layout.
+INFO (XSTRM-220): 79. Translating STRUCTURE CLKINVX12 as cellView siren_signoff/CLKINVX12/layout.
+INFO (XSTRM-220): 80. Translating STRUCTURE CLKBUFX12 as cellView siren_signoff/CLKBUFX12/layout.
+INFO (XSTRM-220): 81. Translating STRUCTURE BUFX12 as cellView siren_signoff/BUFX12/layout.
+INFO (XSTRM-220): 82. Translating STRUCTURE INVX3 as cellView siren_signoff/INVX3/layout.
+INFO (XSTRM-220): 83. Translating STRUCTURE INVX4 as cellView siren_signoff/INVX4/layout.
+INFO (XSTRM-220): 84. Translating STRUCTURE INVX6 as cellView siren_signoff/INVX6/layout.
+INFO (XSTRM-220): 85. Translating STRUCTURE DLY4X1 as cellView siren_signoff/DLY4X1/layout.
+INFO (XSTRM-220): 86. Translating STRUCTURE DFFRHQX1 as cellView siren_signoff/DFFRHQX1/layout.
+INFO (XSTRM-220): 87. Translating STRUCTURE SDFFRHQX1 as cellView siren_signoff/SDFFRHQX1/layout.
+INFO (XSTRM-220): 88. Translating STRUCTURE OAI2BB1X1 as cellView siren_signoff/OAI2BB1X1/layout.
+INFO (XSTRM-220): 89. Translating STRUCTURE AND3X1 as cellView siren_signoff/AND3X1/layout.
+INFO (XSTRM-220): 90. Translating STRUCTURE AOI31X1 as cellView siren_signoff/AOI31X1/layout.
+INFO (XSTRM-220): 91. Translating STRUCTURE AOI32X1 as cellView siren_signoff/AOI32X1/layout.
+INFO (XSTRM-220): 92. Translating STRUCTURE ADDFX1 as cellView siren_signoff/ADDFX1/layout.
+INFO (XSTRM-220): 93. Translating STRUCTURE XNOR2XL as cellView siren_signoff/XNOR2XL/layout.
+INFO (XSTRM-220): 94. Translating STRUCTURE OR4XL as cellView siren_signoff/OR4XL/layout.
+INFO (XSTRM-220): 95. Translating STRUCTURE AND3XL as cellView siren_signoff/AND3XL/layout.
+INFO (XSTRM-220): 96. Translating STRUCTURE OAI32X1 as cellView siren_signoff/OAI32X1/layout.
+INFO (XSTRM-220): 97. Translating STRUCTURE OAI31X1 as cellView siren_signoff/OAI31X1/layout.
+INFO (XSTRM-220): 98. Translating STRUCTURE OAI222XL as cellView siren_signoff/OAI222XL/layout.
+INFO (XSTRM-220): 99. Translating STRUCTURE AOI221X1 as cellView siren_signoff/AOI221X1/layout.
+INFO (XSTRM-220): 100. Translating STRUCTURE OAI2BB1XL as cellView siren_signoff/OAI2BB1XL/layout.
+INFO (XSTRM-220): 101. Translating STRUCTURE AOI22X1 as cellView siren_signoff/AOI22X1/layout.
+INFO (XSTRM-220): 102. Translating STRUCTURE MX2X1 as cellView siren_signoff/MX2X1/layout.
+INFO (XSTRM-220): 103. Translating STRUCTURE AOI21XL as cellView siren_signoff/AOI21XL/layout.
+INFO (XSTRM-220): 104. Translating STRUCTURE AOI211XL as cellView siren_signoff/AOI211XL/layout.
+INFO (XSTRM-220): 105. Translating STRUCTURE OAI211XL as cellView siren_signoff/OAI211XL/layout.
+INFO (XSTRM-220): 106. Translating STRUCTURE OAI32XL as cellView siren_signoff/OAI32XL/layout.
+INFO (XSTRM-220): 107. Translating STRUCTURE OAI22XL as cellView siren_signoff/OAI22XL/layout.
+INFO (XSTRM-220): 108. Translating STRUCTURE OAI21XL as cellView siren_signoff/OAI21XL/layout.
+INFO (XSTRM-220): 109. Translating STRUCTURE NAND2BXL as cellView siren_signoff/NAND2BXL/layout.
+INFO (XSTRM-220): 110. Translating STRUCTURE NOR2BXL as cellView siren_signoff/NOR2BXL/layout.
+INFO (XSTRM-220): 111. Translating STRUCTURE OAI221XL as cellView siren_signoff/OAI221XL/layout.
+INFO (XSTRM-220): 112. Translating STRUCTURE OR2XL as cellView siren_signoff/OR2XL/layout.
+INFO (XSTRM-220): 113. Translating STRUCTURE AND2XL as cellView siren_signoff/AND2XL/layout.
+INFO (XSTRM-220): 114. Translating STRUCTURE XOR2XL as cellView siren_signoff/XOR2XL/layout.
+INFO (XSTRM-220): 115. Translating STRUCTURE NOR3BXL as cellView siren_signoff/NOR3BXL/layout.
+INFO (XSTRM-220): 116. Translating STRUCTURE NOR4X2 as cellView siren_signoff/NOR4X2/layout.
+INFO (XSTRM-220): 117. Translating STRUCTURE OAI22X2 as cellView siren_signoff/OAI22X2/layout.
+INFO (XSTRM-220): 118. Translating STRUCTURE NAND3BX4 as cellView siren_signoff/NAND3BX4/layout.
+INFO (XSTRM-220): 119. Translating STRUCTURE OR2X4 as cellView siren_signoff/OR2X4/layout.
+INFO (XSTRM-220): 120. Translating STRUCTURE NAND2BX4 as cellView siren_signoff/NAND2BX4/layout.
+INFO (XSTRM-220): 121. Translating STRUCTURE CLKAND2X6 as cellView siren_signoff/CLKAND2X6/layout.
+INFO (XSTRM-220): 122. Translating STRUCTURE NAND3XL as cellView siren_signoff/NAND3XL/layout.
+INFO (XSTRM-220): 123. Translating STRUCTURE NOR2X4 as cellView siren_signoff/NOR2X4/layout.
+INFO (XSTRM-220): 124. Translating STRUCTURE AOI31X2 as cellView siren_signoff/AOI31X2/layout.
+INFO (XSTRM-220): 125. Translating STRUCTURE AO21X1 as cellView siren_signoff/AO21X1/layout.
+INFO (XSTRM-220): 126. Translating STRUCTURE ADDFXL as cellView siren_signoff/ADDFXL/layout.
+INFO (XSTRM-220): 127. Translating STRUCTURE XNOR3X1 as cellView siren_signoff/XNOR3X1/layout.
+INFO (XSTRM-220): 128. Translating STRUCTURE AOI2BB1XL as cellView siren_signoff/AOI2BB1XL/layout.
+INFO (XSTRM-220): 129. Translating STRUCTURE CLKXOR2X1 as cellView siren_signoff/CLKXOR2X1/layout.
+INFO (XSTRM-220): 130. Translating STRUCTURE OAI2BB1X2 as cellView siren_signoff/OAI2BB1X2/layout.
+INFO (XSTRM-220): 131. Translating STRUCTURE AOI2BB1X1 as cellView siren_signoff/AOI2BB1X1/layout.
+INFO (XSTRM-220): 132. Translating STRUCTURE AND2X4 as cellView siren_signoff/AND2X4/layout.
+INFO (XSTRM-220): 133. Translating STRUCTURE OAI22X4 as cellView siren_signoff/OAI22X4/layout.
+INFO (XSTRM-220): 134. Translating STRUCTURE NOR4X1 as cellView siren_signoff/NOR4X1/layout.
+INFO (XSTRM-220): 135. Translating STRUCTURE XNOR2X2 as cellView siren_signoff/XNOR2X2/layout.
+INFO (XSTRM-220): 136. Translating STRUCTURE OAI2BB2X1 as cellView siren_signoff/OAI2BB2X1/layout.
+INFO (XSTRM-220): 137. Translating STRUCTURE OA21XL as cellView siren_signoff/OA21XL/layout.
+INFO (XSTRM-220): 138. Translating STRUCTURE NOR3XL as cellView siren_signoff/NOR3XL/layout.
+INFO (XSTRM-220): 139. Translating STRUCTURE NAND3BXL as cellView siren_signoff/NAND3BXL/layout.
+INFO (XSTRM-220): 140. Translating STRUCTURE AO22X1 as cellView siren_signoff/AO22X1/layout.
+INFO (XSTRM-220): 141. Translating STRUCTURE SDFFRHQX2 as cellView siren_signoff/SDFFRHQX2/layout.
+INFO (XSTRM-220): 142. Translating STRUCTURE AND2X2 as cellView siren_signoff/AND2X2/layout.
+INFO (XSTRM-220): 143. Translating STRUCTURE NAND3X4 as cellView siren_signoff/NAND3X4/layout.
+INFO (XSTRM-220): 144. Translating STRUCTURE AND2X6 as cellView siren_signoff/AND2X6/layout.
+INFO (XSTRM-220): 145. Translating STRUCTURE NOR3BX4 as cellView siren_signoff/NOR3BX4/layout.
+INFO (XSTRM-220): 146. Translating STRUCTURE AOI31X4 as cellView siren_signoff/AOI31X4/layout.
+INFO (XSTRM-220): 147. Translating STRUCTURE NOR4BX2 as cellView siren_signoff/NOR4BX2/layout.
+INFO (XSTRM-220): 148. Translating STRUCTURE OR2X6 as cellView siren_signoff/OR2X6/layout.
+INFO (XSTRM-220): 149. Translating STRUCTURE MXI2X2 as cellView siren_signoff/MXI2X2/layout.
+INFO (XSTRM-220): 150. Translating STRUCTURE DFFRXL as cellView siren_signoff/DFFRXL/layout.
+INFO (XSTRM-220): 151. Translating STRUCTURE DFFRX4 as cellView siren_signoff/DFFRX4/layout.
+INFO (XSTRM-220): 152. Translating STRUCTURE DFFRX1 as cellView siren_signoff/DFFRX1/layout.
+INFO (XSTRM-220): 153. Translating STRUCTURE NOR4BX1 as cellView siren_signoff/NOR4BX1/layout.
+INFO (XSTRM-220): 154. Translating STRUCTURE NAND4BXL as cellView siren_signoff/NAND4BXL/layout.
+INFO (XSTRM-220): 155. Translating STRUCTURE NAND4XL as cellView siren_signoff/NAND4XL/layout.
+INFO (XSTRM-220): 156. Translating STRUCTURE AO22XL as cellView siren_signoff/AO22XL/layout.
+INFO (XSTRM-220): 157. Translating STRUCTURE AOI221XL as cellView siren_signoff/AOI221XL/layout.
+INFO (XSTRM-220): 158. Translating STRUCTURE MX3XL as cellView siren_signoff/MX3XL/layout.
+INFO (XSTRM-220): 159. Translating STRUCTURE OAI31XL as cellView siren_signoff/OAI31XL/layout.
+INFO (XSTRM-220): 160. Translating STRUCTURE OAI221X1 as cellView siren_signoff/OAI221X1/layout.
+INFO (XSTRM-220): 161. Translating STRUCTURE OR3XL as cellView siren_signoff/OR3XL/layout.
+INFO (XSTRM-220): 162. Translating STRUCTURE AOI32XL as cellView siren_signoff/AOI32XL/layout.
+INFO (XSTRM-220): 163. Translating STRUCTURE AOI33XL as cellView siren_signoff/AOI33XL/layout.
+INFO (XSTRM-220): 164. Translating STRUCTURE AO22X4 as cellView siren_signoff/AO22X4/layout.
+INFO (XSTRM-220): 165. Translating STRUCTURE ADDHXL as cellView siren_signoff/ADDHXL/layout.
+INFO (XSTRM-220): 166. Translating STRUCTURE OA22XL as cellView siren_signoff/OA22XL/layout.
+INFO (XSTRM-220): 167. Translating STRUCTURE NAND4X2 as cellView siren_signoff/NAND4X2/layout.
+INFO (XSTRM-220): 168. Translating STRUCTURE OR4X1 as cellView siren_signoff/OR4X1/layout.
+INFO (XSTRM-220): 169. Translating STRUCTURE NAND2X6 as cellView siren_signoff/NAND2X6/layout.
+INFO (XSTRM-220): 170. Translating STRUCTURE OR3X4 as cellView siren_signoff/OR3X4/layout.
+INFO (XSTRM-220): 171. Translating STRUCTURE OR3X1 as cellView siren_signoff/OR3X1/layout.
+INFO (XSTRM-220): 172. Translating STRUCTURE OR4X2 as cellView siren_signoff/OR4X2/layout.
+INFO (XSTRM-220): 173. Translating STRUCTURE AOI221X2 as cellView siren_signoff/AOI221X2/layout.
+INFO (XSTRM-220): 174. Translating STRUCTURE OA22X1 as cellView siren_signoff/OA22X1/layout.
+INFO (XSTRM-220): 175. Translating STRUCTURE AOI2BB1X2 as cellView siren_signoff/AOI2BB1X2/layout.
+INFO (XSTRM-220): 176. Translating STRUCTURE OAI33X1 as cellView siren_signoff/OAI33X1/layout.
+INFO (XSTRM-220): 177. Translating STRUCTURE AOI22XL as cellView siren_signoff/AOI22XL/layout.
+INFO (XSTRM-220): 178. Translating STRUCTURE AND2X8 as cellView siren_signoff/AND2X8/layout.
+INFO (XSTRM-220): 179. Translating STRUCTURE SDFFRHQX4 as cellView siren_signoff/SDFFRHQX4/layout.
+INFO (XSTRM-220): 180. Translating STRUCTURE DFFRHQX2 as cellView siren_signoff/DFFRHQX2/layout.
+INFO (XSTRM-220): 181. Translating STRUCTURE SDFFRHQX8 as cellView siren_signoff/SDFFRHQX8/layout.
+INFO (XSTRM-220): 182. Translating STRUCTURE NAND4BX2 as cellView siren_signoff/NAND4BX2/layout.
+INFO (XSTRM-220): 183. Translating STRUCTURE SDFFRX2 as cellView siren_signoff/SDFFRX2/layout.
+INFO (XSTRM-220): 184. Translating STRUCTURE SDFFRX4 as cellView siren_signoff/SDFFRX4/layout.
+INFO (XSTRM-220): 185. Translating STRUCTURE SDFFRX1 as cellView siren_signoff/SDFFRX1/layout.
+INFO (XSTRM-220): 186. Translating STRUCTURE SDFFRXL as cellView siren_signoff/SDFFRXL/layout.
+INFO (XSTRM-220): 187. Translating STRUCTURE DFFRX2 as cellView siren_signoff/DFFRX2/layout.
+INFO (XSTRM-220): 188. Translating STRUCTURE ADDFHX2 as cellView siren_signoff/ADDFHX2/layout.
+INFO (XSTRM-220): 189. Translating STRUCTURE ADDFHX1 as cellView siren_signoff/ADDFHX1/layout.
+INFO (XSTRM-220): 190. Translating STRUCTURE AND4XL as cellView siren_signoff/AND4XL/layout.
+INFO (XSTRM-220): 191. Translating STRUCTURE ADDFHXL as cellView siren_signoff/ADDFHXL/layout.
+INFO (XSTRM-220): 192. Translating STRUCTURE CLKXOR2X2 as cellView siren_signoff/CLKXOR2X2/layout.
+INFO (XSTRM-220): 193. Translating STRUCTURE CLKMX2X2 as cellView siren_signoff/CLKMX2X2/layout.
+INFO (XSTRM-220): 194. Translating STRUCTURE ADDHX1 as cellView siren_signoff/ADDHX1/layout.
+INFO (XSTRM-220): 195. Translating STRUCTURE AOI2BB1X4 as cellView siren_signoff/AOI2BB1X4/layout.
+INFO (XSTRM-220): 196. Translating STRUCTURE OAI32X2 as cellView siren_signoff/OAI32X2/layout.
+INFO (XSTRM-220): 197. Translating STRUCTURE AOI2BB2X1 as cellView siren_signoff/AOI2BB2X1/layout.
+INFO (XSTRM-220): 198. Translating STRUCTURE AOI211X2 as cellView siren_signoff/AOI211X2/layout.
+INFO (XSTRM-220): 199. Translating STRUCTURE OAI31X2 as cellView siren_signoff/OAI31X2/layout.
+INFO (XSTRM-220): 200. Translating STRUCTURE XNOR2X4 as cellView siren_signoff/XNOR2X4/layout.
+INFO (XSTRM-220): 201. Translating STRUCTURE NAND4BX1 as cellView siren_signoff/NAND4BX1/layout.
+INFO (XSTRM-220): 202. Translating STRUCTURE NAND3X6 as cellView siren_signoff/NAND3X6/layout.
+INFO (XSTRM-220): 203. Translating STRUCTURE AO22X2 as cellView siren_signoff/AO22X2/layout.
+INFO (XSTRM-220): 204. Translating STRUCTURE OAI2BB2X2 as cellView siren_signoff/OAI2BB2X2/layout.
+INFO (XSTRM-220): 205. Translating STRUCTURE FILL64 as cellView siren_signoff/FILL64/layout.
+INFO (XSTRM-220): 206. Translating STRUCTURE FILL8 as cellView siren_signoff/FILL8/layout.
+INFO (XSTRM-220): 207. Translating STRUCTURE FILL4 as cellView siren_signoff/FILL4/layout.
+INFO (XSTRM-220): 208. Translating STRUCTURE FILL1 as cellView siren_signoff/FILL1/layout.
+INFO (XSTRM-220): 209. Translating STRUCTURE FILL32 as cellView siren_signoff/FILL32/layout.
+INFO (XSTRM-220): 210. Translating STRUCTURE FILL2 as cellView siren_signoff/FILL2/layout.
+INFO (XSTRM-220): 211. Translating STRUCTURE FILL16 as cellView siren_signoff/FILL16/layout.
+INFO (XSTRM-220): 212. Translating STRUCTURE siren_block_engine as cellView siren_signoff/siren_block_engine/layout.
+
+Summary of Objects Translated:
+	Instances:                              65717
+	CustomVias:                             0
+	StandardVias:                           0
+	CdsGenVias:                             0
+	Arrays:                                 0
+	Polygons:                               94
+	Paths:                                  2
+	PathSegs:                               0
+	Rectangles:                             29775
+	Text:                                   1466
+	Node:                                   0
+	Line:                                   0
+	Cells:                                  212
+
+Elapsed Time: 0.9s   User Time: 0.5s   CPU Time: 0.1s   Peak VM: 20036KB  CPUs Used: 2
+INFO (XSTRM-234): Translation completed. '0' error(s) and '11' warning(s) found.

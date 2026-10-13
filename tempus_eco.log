@@ -1,0 +1,159 @@
+
+Cadence Tempus(TM) Timing Solution.
+Copyright 2022 Cadence Design Systems, Inc. All rights reserved worldwide.
+
+Version:	v22.11-s001_1, built Fri Sep 16 15:45:21 PDT 2022
+Options:	-eco -files scripts/run_tempus.tcl -log tempus_eco.log 
+Date:		Mon Oct 12 13:21:03 2026
+Host:		cad312vitcc.vit.ac.in (x86_64 w/Linux 4.18.0-553.150.1.el8_10.x86_64) (16cores*64cpus*INTEL(R) XEON(R) GOLD 6526Y 38400KB)
+OS:		Red Hat Enterprise Linux release 8.10 (Ootpa)
+
+License:
+		[13:21:03.328530] Configured Lic search path (21.01-s002): 5281@14.139.1.126:1717@14.139.1.126
+
+		tpsxl	Tempus Timing Signoff Solution XL	22.1	checkout succeeded
+		16 CPU jobs allowed with the current license(s). Use set_multi_cpu_usage to set your required CPU count.
+Change the soft stacksize limit to 0.2%RAM (4126 mbytes). Set global soft_stack_size_limit to change the value.
+environment variable TMPDIR is '/tmp/ssv_tmpdir_2266076_hnyZeU'.
+#@ Processing -files option
+Sourcing tcl/tk file 'scripts/run_tempus.tcl' ...
+<CMD> set_multi_cpu_usage -localCpu 4
+<CMD> init_design
+#% Begin Load MMMC data ... (date=10/12 13:21:21, mem=1233.0M)
+Number of views requested 1 are allowed with the current licenses... continuing with set_analysis_view.
+#% End Load MMMC data ... (date=10/12 13:21:21, total cpu=0:00:00.0, real=0:00:00.0, peak res=1233.7M, current mem=1233.7M)
+rc_corner_nominal
+Reading pin direction from '/home/install/FOUNDRY/digital/90nm/dig/lef/gsclib090_translated_ref.lef' ...
+Loading view definition file from tempus_reports/mmmc_generated.tcl
+Starting library reading in 'Multi-threaded flow' (with '4' threads)
+Reading   timing library /home/install/FOUNDRY/digital/90nm/dig/lib/slow.lib.
+Read 479 cells in library slow.
+Reading   timing library /home/install/FOUNDRY/digital/90nm/dig/lib/fast.lib.
+Read 479 cells in library fast.
+Library reading multithread flow ended.
+*** End library_loading (cpu=0.02min, real=0.00min, mem=131.5M, fe_cpu=0.24min, fe_real=0.30min, fe_mem=1431.9M) ***
+#% Begin Load netlist data ... (date=10/12 13:21:21, mem=1251.1M)
+*** Begin netlist parsing (mem=1431.9M) ***
+Reading verilog netlist 'outputs/siren_block_engine_postroute.v'
+
+*** Memory Usage v#1 (Current mem = 1589.938M, initial mem = 626.465M) ***
+*** End netlist parsing (cpu=0:00:00.2, real=0:00:00.0, mem=1589.9M) ***
+#% End Load netlist data ... (date=10/12 13:21:22, total cpu=0:00:00.5, real=0:00:01.0, peak res=1371.7M, current mem=1371.7M)
+Reading pin dir info from /tmp/ssv_tmpdir_2266076_hnyZeU/.bbx_2266076.
+Set top cell to siren_block_engine.
+Building hierarchical netlist for Cell siren_block_engine ...
+***** UseNewTieNetMode *****.
+*** Netlist is unique.
+** info: there are 978 modules.
+** info: there are 31782 stdCell insts.
+
+*** Memory Usage v#1 (Current mem = 1940.383M, initial mem = 626.465M) ***
+Set Default Input Pin Transition as 0.1 ps.
+outputs/siren_block_engine_out.sdc
+Extraction setup Started 
+Summary of Active RC-Corners : 
+ 
+ Analysis View: worst_case
+    RC-Corner Name        : rc_corner_nominal
+    RC-Corner Index       : 0
+    RC-Corner Temperature : 25 Celsius
+    RC-Corner Cap Table   : ''
+    RC-Corner PostRoute Res Factor        : 1
+    RC-Corner PostRoute Cap Factor        : 1
+    RC-Corner PostRoute XCap Factor       : 1
+ 
+ Analysis View: best_case
+    RC-Corner Name        : rc_corner_nominal
+    RC-Corner Index       : 0
+    RC-Corner Temperature : 25 Celsius
+    RC-Corner Cap Table   : ''
+    RC-Corner PostRoute Res Factor        : 1
+    RC-Corner PostRoute Cap Factor        : 1
+    RC-Corner PostRoute XCap Factor       : 1
+Multithreaded Timing Analysis is initialized with 4 threads
+
+Reading timing constraints file 'outputs/siren_block_engine_out.sdc' ...
+Current (total cpu=0:00:16.0, real=0:00:19.0, peak res=2032.3M, current mem=2032.3M)
+**WARN: (TCLCMD-1461):	Skipped unsupported command: set_units (File outputs/siren_block_engine_out.sdc, Line 9).
+
+**WARN: (TCLCMD-1461):	Skipped unsupported command: set_units (File outputs/siren_block_engine_out.sdc, Line 10).
+
+siren_block_engine
+INFO (CTE): Reading of timing constraints file outputs/siren_block_engine_out.sdc completed, with 2 WARNING
+Ending "Constraint file reading stats" (total cpu=0:00:00.0, real=0:00:00.0, peak res=2069.1M, current mem=2069.1M)
+Current (total cpu=0:00:16.0, real=0:00:19.0, peak res=2069.1M, current mem=2069.1M)
+Total number of combinational cells: 316
+Total number of sequential cells: 152
+Total number of tristate cells: 10
+Total number of level shifter cells: 0
+Total number of power gating cells: 0
+Total number of isolation cells: 0
+Total number of power switch cells: 0
+Total number of pulse generator cells: 0
+Total number of always on buffers: 0
+Total number of retention cells: 0
+Total number of physical cells: 0
+List of usable buffers: BUFX12 BUFX16 BUFX2 BUFX20 BUFX3 BUFX4 BUFX6 BUFX8 CLKBUFX12 CLKBUFX16 CLKBUFX2 CLKBUFX20 CLKBUFX3 CLKBUFX4 CLKBUFX6 CLKBUFX8
+Total number of usable buffers: 16
+List of unusable buffers:
+Total number of unusable buffers: 0
+List of usable inverters: CLKINVX1 CLKINVX12 CLKINVX16 CLKINVX2 CLKINVX20 CLKINVX3 CLKINVX4 CLKINVX6 CLKINVX8 INVX1 INVX12 INVX16 INVX2 INVX20 INVX3 INVX4 INVX6 INVXL INVX8
+Total number of usable inverters: 19
+List of unusable inverters:
+Total number of unusable inverters: 0
+List of identified usable delay cells: DLY1X1 DLY1X4 DLY2X1 DLY2X4 DLY3X1 DLY3X4 DLY4X4 DLY4X1
+Total number of identified usable delay cells: 8
+List of identified unusable delay cells:
+Total number of identified unusable delay cells: 0
+<CMD> all_constraint_modes -active
+constr_func
+<CMD> set_interactive_constraint_modes [all_constraint_modes -active]
+<CMD> read_spef outputs/siren_block_engine.spef
+Used active corner rc_corner_nominal for reading SPEF file as option '-rc_corner <cornerName>' is not specified in MMMC mode.
+
+SPEF files for RC Corner rc_corner_nominal:
+Top-level spef file 'outputs/siren_block_engine.spef'.
+Start spef parsing (MEM=2639.33).
+SPEF file outputs/siren_block_engine.spef.
+Number of Resistors     : 597551
+Number of Ground Caps   : 602670
+Number of Coupling Caps : 217044
+
+End spef parsing (MEM=2682.45 CPU=0:00:03.1 REAL=0:00:00.0).
+46 nets are missing in SPEF file. The names of these nets are saved in ./rc_corner_nominal.missing_nets.rpt.
+<CMD> set_propagated_clock [get_clocks *]
+<CMD> set_si_mode -enable_delay_report true -enable_glitch_report true
+<CMD> update_timing -full
+AAE_INFO: opIsDesignInPostRouteState() is 0
+AAE DB initialization (MEM=2706.34 CPU=0:00:00.0 REAL=0:00:00.0) 
+#################################################################################
+# Design Name: siren_block_engine
+# Design Mode: 65nm
+# Analysis Mode: MMMC OCV 
+# Parasitics Mode: SPEF/RCDB 
+# Signoff Settings: SI Off 
+#################################################################################
+Start delay calculation (fullDC) (4 T). (MEM=2849.71)
+outputs/siren_block_engine_out.sdc
+Total number of fetched objects 39071
+Total number of fetched objects 39071
+End delay calculation. (MEM=3462.87 CPU=0:00:05.0 REAL=0:00:01.0)
+End delay calculation (fullDC). (MEM=3462.87 CPU=0:00:05.7 REAL=0:00:02.0)
+<CMD> report_analysis_summary > tempus_reports/timing_summary_pre_eco.rpt
+<CMD> eco_opt_design -setup -view worst_case
+
+Usage: eco_opt_design [-help] [-area] [-drv] [-dynamic] [-hold] [-leakage] [-power] [-setup] [-update_timing]
+
+**ERROR: (IMPTCM-48):	"-view" is not a legal option for command "eco_opt_design". Either the current option or an option prior to it is not specified correctly.
+(file "scripts/run_tempus.tcl" line 57)
+<CMD> exit
+
+*** Memory Usage v#1 (Current mem = 3223.867M, initial mem = 626.465M) ***
+
+*** Summary of all messages that are not suppressed in this session:
+Severity  ID               Count  Summary                                  
+ERROR     IMPTCM-48            1  "%s" is not a legal option for command "...
+WARNING   TCLCMD-1461          2  Skipped unsupported command: %s          
+*** Message Summary: 2 warning(s), 1 error(s)
+
+--- Ending "Tempus Timing Solution" (totcpu=0:00:28.8, real=0:00:58.0, mem=3223.9M) ---
