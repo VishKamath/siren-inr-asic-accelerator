@@ -1,106 +1,433 @@
-# ASIC-Oriented SIREN Hardware Accelerator & Arbitrary-Scale Image Upscaler
+# `siren_block_engine`: Hardware Accelerator for Implicit Neural Representations
 
-A synthesizable, pipelined SystemVerilog hardware accelerator for Implicit Neural Representation (INR) decoding and continuous-domain super-resolution using a 2-layer Sinusoidal Representation Network (SIREN).
-
----
-
-## 1. Overview
-
-Conventional digital image decoders rely on discrete pixel matrices stored in frame buffers, requiring bilinear, bicubic, or CNN-based interpolation to upscale. 
-
-In contrast, this hardware accelerator models visual signals as a continuous coordinate mapping function:
-
-$$f_\theta(x, y) \rightarrow \text{Pixel Intensity}$$
-
-Because $(x, y) \in [-1.0, 1.0]$ are fed as continuous coordinate values rather than discrete array indices, the architecture functions as a native **arbitrary-scale image upscaler**. You can generate higher resolution outputs ($2\times$, $4\times$, $8\times$) simply by sampling the coordinate space at a finer fixed-point step size $\Delta$ without altering the hardware datapath or inserting interpolation memory buffers.
+A high-throughput, pipelined ASIC accelerator engineered for **Implicit Neural Representations (SIREN)**, synthesized and closed for signoff using the Cadence digital implementation flow. The engine computes spatial affine mappings and continuous sinusoidal activations natively in silicon without lookup tables (LUTs) or software iteration stalls.
 
 ---
 
-## 2. Key Architectural Features
+## 1. Architectural Overview
 
-* **Parallel 16-Neuron Hidden Layer:** Implemented via SystemVerilog `generate` blocks to evaluate 16 parallel dot products simultaneously per clock cycle.
-* **16-Stage Pipelined CORDIC Engine:** Evaluates continuous trigonometric activations ($\sin(\cdot)$ / $\cos(\cdot)$) on-the-fly in vector-rotation mode, completely eliminating SRAM lookup tables.
-* **Gain Factor Calibration:** Pre-scales initial coordinate seeds with $1/K \approx 0.607252935$ to neutralize the CORDIC vector growth factor ($K \approx 1.64676$).
-* **Quadrant Phase Folder:** Normalizes unbounded angular inputs from $[-30\pi, +30\pi]$ into the CORDIC convergence zone of $[-\pi, \pi]$ using modulo arithmetic.
-* **Q4.12 Fixed-Point Datapath:** Arithmetic datapath optimized for fixed-point DSP/ASIC targets with signed right-shifts (`>>> 12`) to preserve dynamic range.
-* **Layer 2 Reduction Tree & Saturation:** Multi-channel accumulation logic with extended guard bits to avoid overflow roll-over, clipping cleanly to `16'sh7FFF` ($+7.999$) and `16'sh8000` ($-8.000$).
+The core evaluates the canonical SIREN activation mapping:
 
----
 
-## 3. Hardware Datapath
-## Hardware Architecture
+$$y = \sin(\omega_0 \cdot (W \cdot x + b))$$
 
-The proposed accelerator implements a compact **SIREN-based coordinate-to-pixel reconstruction architecture** using fixed-point arithmetic, parallel neurons, phase folding, and a pipelined CORDIC sine engine.
+The engine features a 4-way parallel spatial execution array (`gen_physical_neurons[0..3]`), driven by a streaming, unrolled datapath designed for 100 MHz operation:
 
-```mermaid
-flowchart TD
-    A["Input Coordinates (x, y)<br/>Signed Q4.12"] --> B["Broadcast to 16 Neurons"]
-
-    subgraph L1["Layer 1: 16 Parallel SIREN Neurons"]
-        C["2-Cycle Coordinate MAC<br/>acc = x*W0 + y*W1 + Bias"]
-        D["Omega-0 Scaler<br/>θ_raw = acc * 30.0"]
-        E["Phase Folder<br/>θ in [-π, π]"]
-        F["16-Stage CORDIC Engine<br/>sin(θ), cos(θ)"]
-
-        C --> D
-        D --> E
-        E --> F
-    end
-
-    B --> C
-    F --> G["Layer 2: Linear Combiner<br/>Σ (sin(θ_k) * W2_k) >>> 12 + Bias_L2"]
-    G --> H["Symmetric Saturation Clamp<br/>[-32768, +32767]"]
-    H --> I["Reconstructed Pixel<br/>Signed Q4.12"]
 ```
-## 4. Latency & Timing Profile
+                     ┌──────────────────────────────────────────┐
+                     │           w1_x_mem (Registers)           │
+                     └────────────────────┬─────────────────────┘
+                                          │ Input Coordinates & Weights
+                                          ▼
+                     ┌──────────────────────────────────────────┐
+                     │     Stage 1: Affine Transform (MAC)      │
+                     │   Carry-Save Adder (CSA) Trees & Accum   │
+                     └────────────────────┬─────────────────────┘
+                                          │ Raw Dot-Product (32-bit Q16.16)
+                                          ▼
+                     ┌──────────────────────────────────────────┐
+                     │    Stage 2: siren_scaler & Remainder     │
+                     │  Fixed-Point const_mul (ω0) & rem (mod 2π)│
+                     └────────────────────┬─────────────────────┘
+                                          │ Wrapped Angle θ
+                                          ▼
+                     ┌──────────────────────────────────────────┐
+                     │         Stage 3: phase_folder            │
+                     │    Quadrant Mapping to [-π/2, +π/2]      │
+                     └────────────────────┬─────────────────────┘
+                                          │ Folded Angle + Sign Bit
+                                          ▼
+                     ┌──────────────────────────────────────────┐
+                     │     Stage 4: 16-Stage Unrolled CORDIC    │
+                     │     Pipelined Shift-and-Add Vector Rot   │
+                     └────────────────────┬─────────────────────┘
+                                          │
+                                          ▼
+                             Final Activation Output y
 
-| Pipeline Stage | Cycles | Description |
-| :--- | :---: | :--- |
-| **Coordinate MAC** | 2 | Accumulates $x \cdot w_0 + y \cdot w_1 + \text{bias}$ |
-| **Omega-0 Scaler** | 1 | Scales intermediate sum by $\omega_0 = 30.0$ |
-| **Phase Folder** | 1 | Angle reduction to $[-\pi, \pi]$ |
-| **CORDIC Engine** | 16 | 16 cascaded shift-and-add rotation stages |
-| **Layer 2 Combiner** | 1 | Registered sum-of-products reduction + saturation |
-| **Total Pipeline Latency** | **21 Cycles** | Fully pipelined; throughput is 1 pixel per coordinate pair |
+```
+
+### Key Sub-Blocks
+
+* **Coordinate Affine Engine**: Compresses multi-operand additions using high-speed Carry-Save Adder (CSA) trees (`csa_tree_add_*`) and dedicated adders (`ADDFX1`, `ADDFXL`) to bypass long carry-propagation delays.
+
+
+* **Frequency Scaler & Angle Modulo (`siren_scaler`)**: Applies the $\omega_0$ scaling factor via fixed-point multiplication (`const_mul_23_33_*`) and reduces angles via a modular remainder datapath (`rem_26_34_*`).
+
+
+* **Phase Folder (`phase_folder`)**: Maps angles spanning arbitrary domains into the primary CORDIC convergence window $[-\pi/2, +\pi/2]$ and preserves sign symmetry flags.
+
+
+* **16-Stage Unrolled CORDIC Pipeline (`sn_siren_act_u_cordic`)**: Computes trigonometric vector rotations using fixed elementary shifts ($2^{-i}$) and adder-subtractors, producing **4 parallel activations every clock cycle** after an initial fill.
+
+
 
 ---
 
-## 5. Verification & Benchmark Results
+## 2. Toolchain & Operating Environment
 
-The accelerator was validated through a closed-loop Python co-simulation flow. Output hex data dumped by Icarus Verilog was converted back to normalized floating-point values and benchmarked against standard reference images on a $32 \times 32$ grid:
+* **Logic Synthesis**: Cadence Genus™ Synthesis Solution (Release 21.14-s082_1)
 
-| Metric | Floating-Point Golden Model | RTL Hardware Output (Q4.12) |
-| :--- | :---: | :---: |
-| **Peak Signal-to-Noise Ratio (PSNR)** | 28.52 dB | **28.49 dB** |
-| **Structural Similarity Index (SSIM)** | 0.9950 | **0.9950** |
-| **Data Format** | IEEE-754 64-bit Float | Signed Q4.12 Fixed-Point |
-| **Quantization Noise Floor** | Ideal ($0\text{ dB}$) | **-28.5 dB** (Matches LSB truncation) |
+
+* **Static Timing Analysis (STA)**: Cadence Tempus™ Timing Signoff Solution (Release 22.11-s001_1)
+
+
+* **Physical Signoff**: Cadence Pegasus™ / Mentor Calibre (DRC/LVS/ERC)
+* **Standard Cell Corner**: `slow` PVT operating conditions, balanced clock tree, enclosed wireload mode
+
+
+* **Target Clock Constraint**: Single synchronous clock (`clk`), $T_{\text{period}} = 10.00\,\text{ns}$ ($100\,\text{MHz}$)
+
+
 
 ---
 
-## 6. Directory Structure
+## 3. Synthesis Quality of Results (QoR)
 
-```text
-├── doc/
-│   ├── datapath_architecture.png   # Block diagram
-│   └── reconstructed_output.png    # Rendered hardware output
+Generated by Cadence Genus at the `slow` library corner:
+
+### Area & Instance Breakdown
+
+| Cell Class | Instance Count | Total Area ($\mu\text{m}^2$) | Area Contribution |
+| --- | --- | --- | --- |
+| **Combinational Logic** | 22,770
+
+ | 157,283.817
+
+ | 62.7%
+
+ |
+| **Sequential Logic** | 3,984
+
+ | 87,925.287
+
+ | 35.0%
+
+ |
+| **Inverters** | 2,316
+
+ | 5,679.021
+
+ | 2.3%
+
+ |
+| **Buffers** | 4
+
+ | 18.166
+
+ | < 0.1%
+
+ |
+| **Total Engine Silicon** | **29,074**<br> | **250,906.291**<br> | **100.0%**<br> |
+
+### Dominant Gate Families
+
+* **Adders / Compressors** (`ADDFX1`, `ADDFXL`, `ADDFHX1`): 2,826 instances (~55,599 $\mu\text{m}^2$) driving the CSA trees and CORDIC stages.
+
+
+* **Complex Gates** (`AOI21`, `AOI22`, `OAI21`, `OAI22`, `OAI2BB1`): 6,569 instances (~37,280 $\mu\text{m}^2$).
+
+
+* **Multiplexers** (`MXI2XL`, `MX2X1`, `CLKMX2`): 2,501 instances (~15,357 $\mu\text{m}^2$).
+
+
+* **Registers** (`DFFRHQX1`, `SDFFRHQX1`, `DFFRX1`, `SDFFRX2`): 3,984 instances (87,925 $\mu\text{m}^2$).
+
+
+* **Simple Logic Gates** (`NAND2XL`, `NOR2XL`, `AND2XL`, `INVX1`): 8,914 instances (~25,604 $\mu\text{m}^2$).
+
+
+
+### Synthesis Complexity & Run Metrics
+
+* **Max Fanout**: 3,984 (Clock root `clk`)
+
+
+* **Average Fanout**: 2.2
+
+
+* **Terms-to-Net Ratio**: 3.155
+
+
+* **Terms-to-Instance Ratio**: 3.942
+
+
+* **Peak Memory Usage**: 2,456.75 MB
+
+
+* **Synthesis Elapsed Runtime**: 804 seconds (~13.4 min)
+
+
+
+---
+
+## 4. Power Dissipation Analysis
+
+Measured at 100 MHz, nominal $V_{\text{DD}}$, and the `slow` PVT corner (Genus PDB frames):
+
+| Category | Leakage (mW) | Internal (mW) | Switching (mW) | Total (mW) | Power Share |
+| --- | --- | --- | --- | --- | --- |
+| **Sequential (Registers)** | 0.478
+
+ | 8.726
+
+ | 0.407
+
+ | **9.610**<br> | 47.94%
+
+ |
+| **Combinational Logic** | 0.689
+
+ | 6.312
+
+ | 3.435
+
+ | **10.437**<br> | 52.06%
+
+ |
+| **Total Engine Dissipation** | **1.167** (5.82%)
+
+ | **15.038** (75.01%)
+
+ | **3.842** (19.17%)
+
+ | **20.047**<br> | **100.0%**<br> |
+
+### Power Characteristics
+
+* **Internal Power Dominance (75.01%)**: Reflects high internal capacitive charging in the arithmetic carry chains and CORDIC shifter-adders.
+
+
+* **Leakage Containment (5.82%)**: Static leakage is restricted to 1.17 mW under worst-case thermal and voltage conditions.
+
+
+
+---
+
+## 5. Signoff Static Timing Analysis (Tempus)
+
+Multi-corner signoff completed in Cadence Tempus with zero violating paths across all checks:
+
+### Multi-Corner Slack Summary
+
+| Analysis View / Check | WNS (ns) | TNS (ns) | Violating Paths (FEP) | Signoff Status |
+| --- | --- | --- | --- | --- |
+| **Setup Signoff (`worst_case`)** | **+0.094**<br> | **0.000**<br> | **0**<br> | **MET**<br> |
+| • `reg2reg` | +0.094
+
+ | 0.000
+
+ | 0
+
+ | MET
+
+ |
+| • `in2reg` | +0.112
+
+ | 0.000
+
+ | 0
+
+ | MET
+
+ |
+| • `reg2out` | +1.731
+
+ | 0.000
+
+ | 0
+
+ | MET
+
+ |
+| • `in2out` | +0.208
+
+ | 0.000
+
+ | 0
+
+ | MET
+
+ |
+| • `Async` Recovery | +4.683
+
+ | 0.000
+
+ | 0
+
+ | MET
+
+ |
+| **Hold Signoff (`best_case`)** | **+0.001**<br> | **0.000**<br> | **0**<br> | **MET**<br> |
+| • `reg2reg` | +0.001
+
+ | 0.000
+
+ | 0
+
+ | MET
+
+ |
+| • `in2reg` | +0.654
+
+ | 0.000
+
+ | 0
+
+ | MET
+
+ |
+| • `reg2out` | +0.759
+
+ | 0.000
+
+ | 0
+
+ | MET
+
+ |
+| • `in2out` | +1.331
+
+ | 0.000
+
+ | 0
+
+ | MET
+
+ |
+| **Endpoint Min Pulse Width** | **+4.357**<br> | **0.000**<br> | **0**<br> | **MET**<br> |
+
+### Design Rule Violations (DRVs)
+
+* **Max Transition**: 0 Violations (Clean)
+
+
+* **Max Capacitance**: 0 Violations (Clean)
+
+
+* **Max / Min Fanout**: 0 Violations (Clean)
+
+
+
+---
+
+## 6. Critical Path Analysis
+
+### 1. Setup Critical Path (WNS = +0.094 ns)
+
+* **Startpoint**: `gen_physical_neurons[2].sn_mac_acc_out_reg[3]/CK` $\rightarrow$ `Q` (Launch: 0.049 ns)
+
+
+* **Endpoint**: `gen_physical_neurons[2].sn_siren_s/data_out_reg[13]/D`
+
+* **Logic Depth**: 73 cascaded combinational gates
+
+
+* **Datapath Traversal**: Accumulator output feeding through constant multiplier logic (`const_mul_23_33_*`) into the modulo remainder chain (`rem_26_34_*`).
+
+
+* **Timing Breakdown**:
+* Data Arrival Time: $9.669\,\text{ns}$
+
+* Required Time: $9.763\,\text{ns}$ (Clock Period: 10.000 ns, Library Setup: 0.137 ns, Uncertainty: 0.100 ns)
+
+
+* **Slack Margin: +0.094 ns (MET)**
+
+
+
+
+### 2. Hold Critical Path (WNS = +0.001 ns)
+
+* **Startpoint**: `gen_physical_neurons[3]...gen_cordic_stages[10].u_stage_z_out_reg[9]/CK` $\rightarrow$ `QN`
+
+* **Endpoint**: `gen_physical_neurons[3]...gen_cordic_stages[11].u_stage_z_out_reg[9]/D`
+
+* **Timing Mechanism**: Back-to-back shift-register stages in the CORDIC array feature minimal logic delay, making them susceptible to hold contamination.
+
+
+* **Resolution**: P&R inserted 61 ps delay cells (`DLY1X1`).
+
+
+* Data Arrival Time: $0.212\,\text{ns}$
+
+* Required Time: $0.210\,\text{ns}$
+
+* **Slack Margin: +0.001 ns (MET)**
+
+
+
+
+---
+
+## 7. Physical Verification Checklist
+
+Before tape-out generation, the post-route database is verified against the following rule matrix:
+
+| Verification Stage | Check Item | Target Criterion | Status |
+| --- | --- | --- | --- |
+| **DRC (Design Rule Check)** | Base Layers (Poly, Well, Diffusion) | Spacing, enclosure, and width clean | Clean |
+|  | Metal Interconnects (M1 - Top Metal) | Minimum width, pitch, and via enclosure | Clean |
+|  | Antenna Ratio Violations | Diode insertion on long CORDIC routes | Clean |
+|  | Metal / Poly Density Fill | Meets min/max density windows | Clean |
+| **LVS (Layout vs. Schematic)** | Net Connectivity | Net mismatches = 0 | 100% Match |
+|  | Device Integrity | Extracted MOS/Cap/Res count matches netlist | 100% Match |
+|  | Short & Open Circuits | Shorts = 0, Opens = 0 | Clean |
+|  | Substrate & Well Taps | Tap integrity and latch-up rules verified | Clean |
+| **ERC & Reliability** | Well Biasing | No floating wells or unstrapped cells | Clean |
+|  | Static IR Drop | Max drop $< 2.5\%$ of nominal $V_{\text{DD}}$ | Clean |
+|  | Electromigration (EM) | Power straps within peak current budgets | Clean |
+
+---
+
+## 8. Directory Structure
+
+```
 ├── rtl/
-│   ├── inr_pkg.sv                  # Package: Constants, Q-formats, and angle LUT
-│   ├── mac_unit.sv                 # 2-cycle coordinate MAC accumulator
-│   ├── siren_scaler.sv             # Multiplier for omega_0 (30.0)
-│   ├── phase_folder.sv             # Angle reduction module
-│   ├── cordic_stage.sv             # Elementary shift-and-add rotation stage
-│   ├── cordic_wrapper.sv           # 16-stage unrolled CORDIC pipeline
-│   ├── siren_neuron.sv             # Single-neuron SIREN module
-│   └── siren_network.sv            # 16-neuron parallel layer + L2 combiner
-├── sim/
-│   ├── tb_image_recon_16n.sv       # Top-level testbench
-│   ├── coords.hex                  # Input test coordinates
-│   ├── layer1_weights.hex          # Layer 1 weights and biases
-│   ├── layer2_weights.hex          # Layer 2 weights and bias
-│   └── out_pixels.hex              # Raw RTL simulation hex output
-├── sw/
-│   ├── train_siren.py              # PyTorch model training and hex exporter
-│   └── evaluate_metrics.py         # Hex parser, PSNR/SSIM, and rendering script
-├── run_sim.sh                      # Shell script for automated compile and run
-└── README.md
+│   ├── siren_block_engine.sv          # Top-level accelerator module
+│   ├── csa_tree_add.sv                # Carry-Save Adder tree compressor
+│   ├── siren_scaler.sv                # ω0 multiplier & modulo remainder datapath
+│   ├── phase_folder.sv                # Quadrant folding to [-π/2, +π/2]
+│   └── cordic_stage.sv                # Pipelined unrolled CORDIC vector rotation
+├── constraints/
+│   └── signoff_generated.sdc          # Synthesis & STA clock/delay constraints
+├── reports/
+│   ├── genus/
+│   │   ├── area_report.rpt            # Cell count, hierarchical area breakdown
+│   │   ├── gates_report.rpt           # Standard cell library gate distribution
+│   │   ├── power_report.rpt           # Dynamic internal/switching & leakage power
+│   │   └── qor_report.rpt             # Quality of results, fanout, runtimes
+│   └── tempus/
+│       ├── timing_summary.rpt         # Path-group WNS/TNS/FEP signoff table
+│       ├── setup_signoff.rpt          # Top 20 setup critical path traces
+│       ├── hold_signoff.rpt           # Top 20 hold critical path traces
+│       └── all_violators.rpt          # DRV, transition, capacitance, fanout checks
+└── docs/
+    ├── siren_master_review.html       # 17-slide interactive review deck
+    └── technical_handbook.md          # Comprehensive architecture handbook
+
+```
+
+---
+
+## 9. Key Signoff Metrics Summary
+
+* **Target Clock Frequency**: 100 MHz ($T = 10.00\,\text{ns}$)
+
+
+* **Total Cell Count**: 29,074 standard cells
+
+
+* **Silicon Core Area**: 250,906.291 $\mu\text{m}^2$ ($0.251\,\text{mm}^2$)
+
+
+* **Total Power Consumption**: 20.047 mW (Slow corner signoff)
+
+
+* **Setup WNS**: **+0.094 ns** (0 failing endpoints)
+
+
+* **Hold WNS**: **+0.001 ns** (0 failing endpoints)
+
+
+* **Design Rule Violations (DRVs)**: 0 (Transition, Capacitance, and Fanout clean)
